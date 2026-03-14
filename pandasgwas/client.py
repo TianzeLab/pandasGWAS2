@@ -1,179 +1,158 @@
-import functools
-
 import requests
 import json
 import progressbar
 from typing import List, Dict
-import re
-
-from cachetools import TTLCache
 from requests.adapters import HTTPAdapter
+from cachetools import TTLCache
 
-cache = TTLCache(maxsize=1024*1024, ttl=60 * 60 * 24)
+fields = ['Association', 'Study', 'Trait', 'Snp', 'Ancestry', 'Publication', 'GenomicContext', 'Gene', 'Locus']
+fields_and_all = ['All', 'Association', 'Study', 'Trait', 'Snp', 'Ancestry', 'Publication', 'GenomicContext', 'Gene',
+                  'Locus']
+association_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
+study_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
+trait_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
+snp_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
+ancestry_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
+publication_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
+genomicContext_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
+gene_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
+locus_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
 
 
-def cache_get(url, s):
-    if url in cache:
-        return cache[url]
-    res = s.get(url)
-    if res.status_code == 200:
-        cache[url] = res
-    return res
+def get_association(url: str, cached=True) -> List[Dict]:
+    return get_data(url, cache_impl=association_cache, cached=cached, type='associations')
 
 
-def get_studies(url: str, interactive: bool = True) -> List[Dict]:
+def get_study(url: str, cached=True) -> List[Dict]:
+    return get_data(url, cache_impl=study_cache, cached=cached, type='studies')
+
+
+def get_trait(url: str, cached=True) -> List[Dict]:
+    return get_data(url, cache_impl=trait_cache, cached=cached, type='efo_traits')
+
+
+def get_snp(url: str, cached=True) -> List[Dict]:
+    return get_data(url, cache_impl=snp_cache, cached=cached, type='snps')
+
+
+def get_ancestry(url: str, cached=True) -> List[Dict]:
+    return get_data(url, cache_impl=ancestry_cache, cached=cached, type='ancestries')
+
+
+def get_publication(url: str, cached=True) -> List[Dict]:
+    return get_data(url, cache_impl=publication_cache, cached=cached, type='publications')
+
+
+def get_genomicContext(url: str, cached=True) -> List[Dict]:
+    return get_data(url, cache_impl=genomicContext_cache, cached=cached, type='genomic_contexts')
+
+
+def get_gene(url: str, cached=True) -> List[Dict]:
+    return get_data(url, cache_impl=gene_cache, cached=cached, type='genes')
+
+
+def get_locus(url: str, cached=True) -> List[Dict]:
+    return get_data(url, cache_impl=locus_cache, cached=cached, type='loci')
+
+
+def reinit_cache(field: str = 'All', maxsize: int = 2 * 1024, ttl: int = 60 * 60 * 24) -> None:
+    global association_cache
+    global study_cache
+    global trait_cache
+    global snp_cache
+    global ancestry_cache
+    global publication_cache
+    global genomicContext_cache
+    global gene_cache
+    global locus_cache
+    if field not in fields_and_all:
+        raise Exception('The field must one of %s' % str(fields_and_all))
+    if field == "Association":
+        association_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+    elif field == "Study":
+        study_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+    elif field == "Trait":
+        trait_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+    elif field == "Snp":
+        snp_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+    elif field == "Ancestry":
+        ancestry_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+    elif field == "Publication":
+        publication_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+    elif field == "GenomicContext":
+        genomicContext_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+    elif field == "Gene":
+        gene_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+    elif field == "Locus":
+        locus_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+    else:
+        association_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+        study_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+        trait_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+        snp_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+        ancestry_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+        publication_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+        genomicContext_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+        gene_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+        locus_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+
+
+def clear_cache(field: str = 'All') -> None:
+    if field not in fields_and_all:
+        raise Exception('The field must one of %s' % str(fields_and_all))
+    if field == 'All':
+        for s in fields:
+            eval(s.lower() + '_cache.clear()')
+    else:
+        eval(field.lower() + '_cache.clear()')
+
+
+def get_data(url: str, cache_impl=None, cached=True, type=None) -> List[Dict]:
     with requests.Session() as s:
         s.mount('https://', HTTPAdapter(max_retries=5))
-        r = cache_get(url, s)
+        if url in cache_impl and cached:
+            r = cache_impl[url]
+        else:
+            r = s.get(url)
         if r.status_code == 200:
-            parsed_data = json.loads(r.text, object_hook=remove_links)
+            if len(json.loads(r.text)) == 0:
+                return []
+            cache_impl[url] = r
+            parsed_data = json.loads(r.text)
             if parsed_data.get('_embedded') is not None:
-                study_list = parsed_data.get('_embedded').get("studies")
-                if parsed_data.get('page') is not None and parsed_data.get('page').get('totalPages') > 1:
-                    if parsed_data.get('page').get('totalPages') > 100 and interactive:
-                        answer = ask_yes_no_question(
-                            "You are about to download to many data from the GWAS Catalog.\r\nThis might take several "
-                            "minutes.\r\nDo you still want to proceed? (Yes or No)")
-                        if answer == "NO":
-                            return []
-                    bar = progressbar.ProgressBar(max_value=parsed_data.get('page').get('totalPages')-1).start()
-                    for i in range(1, parsed_data.get('page').get('totalPages')):
-                        format_url = '%s?page=%d&size=20' % (url, i)
-                        if '?' in url:
-                            format_url = '%s&page=%d&size=20' % (url, i)
-                        # print('http req:'+format_url)
-
-                        bar.update(i)
-                        r = cache_get(format_url, s)
-                        if r.status_code == 200:
-                            study_list.extend(
-                                json.loads(r.text, object_hook=remove_links).get('_embedded').get("studies"))
+                results_list = parsed_data.get('_embedded').get(type)
+                if parsed_data.get('_links') is not None:
+                    bar = progressbar.ProgressBar(max_value=parsed_data.get('page').get('totalElements')).start()
+                    progress = len(parsed_data.get('_embedded').get(type))
+                    bar.update(progress)
+                    next = parsed_data.get('_links').get('next')
+                    while next is not None:
+                        next_url = next.get('href')
+                        if next_url in cache_impl and cached:
+                            r = cache_impl[next_url]
                         else:
-                            raise Exception('The request for %s failed: response code was %d' % (format_url, r.status_code))
+                            r = s.get(next_url)
+                            if r.status_code == 200:
+                                cache_impl[next_url] = r
+                            elif r.status_code == 404:
+                                return []
+                            else:
+                                raise Exception('The request for %s failed: response code was %d, content was \n%s' % (
+                                    next_url, r.status_code, r.text))
+                            parsed_data = json.loads(r.text)
+                            results_list.extend(parsed_data.get('_embedded').get(type))
+                            progress = progress + len(parsed_data.get('_embedded').get(type))
+                            bar.update(progress)
+                            next = parsed_data.get('_links').get('next')
                     bar.finish()
-                return study_list
+                return results_list
             else:
                 return [parsed_data]
         elif r.status_code == 404:
             return []
         else:
-            print('The request for %s failed: response code was %d' % (url, r.status_code))
-
-
-def get_SNPs(url: str, interactive: bool = True) -> List[Dict]:
-    with requests.Session() as s:
-        s.mount('https://', HTTPAdapter(max_retries=5))
-        r = cache_get(url, s)
-        if r.status_code == 200:
-            parsed_data = json.loads(r.text, object_hook=remove_links)
-            if parsed_data.get('_embedded') is not None:
-                variant_list = parsed_data.get('_embedded').get("singleNucleotidePolymorphisms")
-                if parsed_data.get('page') is not None and parsed_data.get('page').get('totalPages') > 1:
-                    if parsed_data.get('page').get('totalPages') > 100 and interactive:
-                        answer = ask_yes_no_question(
-                            "You are about to download to many data from the GWAS Catalog.\r\nThis might take several "
-                            "minutes.\r\nDo you still want to proceed? (Yes or No)")
-                        if answer == "NO":
-                            return []
-                    bar = progressbar.ProgressBar(max_value=parsed_data.get('page').get('totalPages')-1).start()
-                    for i in range(1, parsed_data.get('page').get('totalPages')):
-                        format_url = '%s?page=%d&size=20' % (url, i)
-                        if '?' in url:
-                            format_url = '%s&page=%d&size=20' % (url, i)
-                        # print('http req:'+format_url)
-                        bar.update(i)
-                        r = cache_get(format_url, s)
-                        if r.status_code == 200:
-                            variant_list.extend(
-                                json.loads(r.text, object_hook=remove_links).get('_embedded').get(
-                                    "singleNucleotidePolymorphisms"))
-                        else:
-                            raise Exception('The request for %s failed: response code was %d' % (format_url, r.status_code))
-                    bar.finish()
-                return variant_list
-            else:
-                return [parsed_data]
-        elif r.status_code == 404:
-            return []
-        else:
-            print('The request for %s failed: response code was %d' % (url, r.status_code))
-
-
-def get_traits(url: str, interactive: bool = True) -> List[Dict]:
-    with requests.Session() as s:
-        s.mount('https://', HTTPAdapter(max_retries=5))
-        r = cache_get(url, s)
-        if r.status_code == 200:
-            parsed_data = json.loads(r.text, object_hook=remove_links)
-            if parsed_data.get('_embedded') is not None:
-                trait_list = parsed_data.get('_embedded').get("efoTraits")
-                if parsed_data.get('page') is not None and parsed_data.get('page').get('totalPages') > 1:
-                    if parsed_data.get('page').get('totalPages') > 100 and interactive:
-                        answer = ask_yes_no_question(
-                            "You are about to download to many data from the GWAS Catalog.\r\nThis might take several "
-                            "minutes.\r\nDo you still want to proceed? (Yes or No)")
-                        if answer == "NO":
-                            return []
-                    bar = progressbar.ProgressBar(max_value=parsed_data.get('page').get('totalPages')-1).start()
-                    for i in range(1, parsed_data.get('page').get('totalPages')):
-                        format_url = '%s?page=%d&size=20' % (url, i)
-                        if '?' in url:
-                            format_url = '%s&page=%d&size=20' % (url, i)
-                        # print('http req:'+format_url)
-                        bar.update(i)
-                        r = cache_get(format_url, s)
-                        if r.status_code == 200:
-                            trait_list.extend(
-                                json.loads(r.text, object_hook=remove_links).get('_embedded').get("efoTraits"))
-                        else:
-                            raise Exception('The request for %s failed: response code was %d' % (format_url, r.status_code))
-                    bar.finish()
-                return trait_list
-            else:
-                return [parsed_data]
-        elif r.status_code == 404:
-            return []
-        else:
-            print('The request for %s failed: response code was %d' % (url, r.status_code))
-
-
-def get_associations(url: str, interactive: bool = True) -> List[Dict]:
-    with requests.Session() as s:
-        s.mount('https://', HTTPAdapter(max_retries=5))
-        r = cache_get(url, s)
-        if r.status_code == 200:
-            parsed_data = json.loads(r.text, object_hook=remove_links_get_id)
-            if parsed_data.get('_embedded') is not None:
-                association_list = parsed_data.get('_embedded').get("associations")
-                if parsed_data.get('page') is not None and parsed_data.get('page').get('totalPages') > 1:
-                    if parsed_data.get('page').get('totalPages') > 100 and interactive:
-                        answer = ask_yes_no_question(
-                            "You are about to download to many data from the GWAS Catalog.\r\nThis might take several "
-                            "minutes.\r\nDo you still want to proceed? (Yes or No)")
-                        if answer == "NO":
-                            return []
-                    bar = progressbar.ProgressBar(max_value=parsed_data.get('page').get('totalPages')-1).start()
-                    for i in range(1, parsed_data.get('page').get('totalPages')):
-                        format_url = '%s?page=%d&size=20' % (url, i)
-                        if '?' in url:
-                            format_url = '%s&page=%d&size=20' % (url, i)
-                        # print('http req:'+format_url)
-                        bar.update(i)
-                        r = cache_get(format_url, s)
-                        if r.status_code == 200:
-                            association_list.extend(
-                                json.loads(r.text, object_hook=remove_links_get_id).get('_embedded').get(
-                                    "associations"))
-                        else:
-                            raise Exception('The request for %s failed: response code was %d' % (format_url, r.status_code))
-                    bar.finish()
-                return association_list
-            else:
-                return [parsed_data]
-        elif r.status_code == 404:
-            return []
-        else:
-            print('The request for %s failed: response code was %d' % (url, r.status_code))
+            raise Exception(
+                'The request for %s failed: response code was %d, content was \n%s' % (url, r.status_code, r.text))
 
 
 def ask_yes_no_question(question: str) -> str:
@@ -183,58 +162,3 @@ def ask_yes_no_question(question: str) -> str:
     return yes_no_answer
 
 
-def remove_links(d: dict):
-    temp = {}
-    for a in d.keys():
-        if a != '_links':
-            temp[a] = d[a]
-    return temp
-
-
-def remove_links_get_id(d: dict):
-    temp = {}
-    for a in d.keys():
-        if a != '_links':
-            temp[a] = d[a]
-        elif 'self' in d['_links'] and not (re.match('.*associations/(.*)', d['_links']['self']['href']) is None):
-            temp['associationId'] = re.match('.*associations/(.*)', d['_links']['self']['href']).group(1)
-    return temp
-
-
-def get_child_efo(url: str, interactive: bool = True) -> List[Dict]:
-    with requests.Session() as s:
-        s.mount('https://', HTTPAdapter(max_retries=5))
-        r = cache_get(url, s)
-        if r.status_code == 200:
-            parsed_data = json.loads(r.text, object_hook=remove_links)
-            if parsed_data.get('_embedded') is not None:
-                terms = parsed_data.get('_embedded').get("terms")
-                if parsed_data.get('page') is not None and parsed_data.get('page').get('totalPages') > 1:
-                    if parsed_data.get('page').get('totalPages') > 100 and interactive:
-                        answer = ask_yes_no_question(
-                            "You are about to download to many data from the GWAS Catalog.\r\nThis might take several "
-                            "minutes.\r\nDo you still want to proceed? (Yes or No)")
-                        if answer == "NO":
-                            return []
-                    bar = progressbar.ProgressBar(max_value=parsed_data.get('page').get('totalPages') - 1).start()
-                    for i in range(1, parsed_data.get('page').get('totalPages')):
-                        format_url = '%s?page=%d&size=20' % (url, i)
-                        if '?' in url:
-                            format_url = '%s&page=%d&size=20' % (url, i)
-                        # print('http req:'+format_url)
-
-                        bar.update(i)
-                        r = cache_get(format_url, s)
-                        if r.status_code == 200:
-                            terms.extend(
-                                json.loads(r.text, object_hook=remove_links).get('_embedded').get("terms"))
-                        else:
-                            raise Exception('The request for %s failed: response code was %d' % (format_url, r.status_code))
-                    bar.finish()
-                return terms
-            else:
-                return []
-        elif r.status_code == 404:
-            return []
-        else:
-            print('The request for %s failed: response code was %d' % (url, r.status_code))
