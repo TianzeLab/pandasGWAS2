@@ -128,7 +128,7 @@ def get_data(url: str, cache_impl=None, cached=True, type=None) -> List[Dict]:
                     next = parsed_data.get('_links').get('next')
                     while next is not None:
                         next_url = next.get('href')
-                        if next_url in cache_impl and cached:
+                        if (next_url in cache_impl) and cached:
                             r = cache_impl[next_url]
                         else:
                             r = s.get(next_url)
@@ -139,11 +139,11 @@ def get_data(url: str, cache_impl=None, cached=True, type=None) -> List[Dict]:
                             else:
                                 raise Exception('The request for %s failed: response code was %d, content was \n%s' % (
                                     next_url, r.status_code, r.text))
-                            parsed_data = json.loads(r.text)
-                            results_list.extend(parsed_data.get('_embedded').get(type))
-                            progress = progress + len(parsed_data.get('_embedded').get(type))
-                            bar.update(progress)
-                            next = parsed_data.get('_links').get('next')
+                        parsed_data = json.loads(r.text)
+                        results_list.extend(parsed_data.get('_embedded').get(type))
+                        progress = progress + len(parsed_data.get('_embedded').get(type))
+                        bar.update(progress)
+                        next = parsed_data.get('_links').get('next')
                     bar.finish()
                 return results_list
             else:
