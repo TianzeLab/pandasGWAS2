@@ -25,7 +25,7 @@ setuptools.setup(
     # package_dir={"": "pandasgwas"},
     packages=['pandasgwas'],
     python_requires=">=3.12",
-    install_requires=['pandas>=2.1.4', 'requests>=2.31.0', 'progressbar2>=4.4.2', 'cachetools>=5.3.3'],
+    install_requires=['pandas>=2.3.3', 'requests>=2.32.5', 'progressbar2>=4.5.0', 'cachetools>=7.0.5'],
     license="MIT",
     keywords=['gwas', 'genomics', 'snp', 'bioinformatics','pandas'],
     package_data={
