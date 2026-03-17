@@ -6,3 +6,4 @@ pandasgwas.egg-info/
 dist/
 build/
 site/
+/.vscode
