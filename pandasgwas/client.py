@@ -128,7 +128,7 @@ def get_data(url: str, cache_impl=None, cached=True, type=None) -> List[Dict]:
                     next = parsed_data.get('_links').get('next')
                     while next is not None:
                         next_url = next.get('href')
-                        if next_url in cache_impl and cached:
+                        if (next_url in cache_impl) and cached:
                             r = cache_impl[next_url]
                         else:
                             r = s.get(next_url)
