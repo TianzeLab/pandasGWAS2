@@ -1,232 +1,125 @@
+from urllib.parse import urlencode, quote
+
+from pandasgwas.client import get_association
 from pandasgwas.Association import Association
-from pandasgwas import client
-from functools import reduce
 
 
-def get_associations_by_study_id(study_id: str, interactive: bool = True) -> Association:
-    """
-    Get GWAS Catalog Associations by Study identifier
-    ```Python
-    from pandasgwas.get_associations import *
-    associations = get_associations_by_study_id('GCST000854')
-    ```
-
-    Args:
-        study_id: Study identifier, accessionId in Study
-        interactive: Indicates whether to run in interactive mode, when the value is True and the query data is divided into many pages, the function will prompt whether to continue the download.
-
-    Returns:
-        An Association object
-
-    """
-    return Association(
-        client.get_associations('https://www.ebi.ac.uk/gwas/rest/api/studies/%s/associations' % study_id,
-                                interactive=interactive))
+BASE_URL = "https://www.ebi.ac.uk/gwas/rest/api/v2/associations"
 
 
-def get_associations_by_association_id(association_id: str, interactive: bool = True) -> Association:
-    """
-    Get GWAS Catalog Associations by their Association identifier
-
-    ```Python
-    from pandasgwas.get_associations import *
-    associations = get_associations_by_association_id('16603')
-    ```
-
-    Args:
-        association_id: Association identifier, associationId in Association
-        interactive: Indicates whether to run in interactive mode, when the value is True and the query data is divided into many pages, the function will prompt whether to continue the download.
-
-    Returns:
-        An Association object
-
-    """
-    return Association(client.get_associations('https://www.ebi.ac.uk/gwas/rest/api/associations/%s' % association_id,
-                                               interactive=interactive))
+def _normalize_str(value):
+    if value is None:
+        return None
+    value = str(value).strip()
+    return value if value != "" else None
 
 
-def get_associations_by_variant_id(variant_id: str, interactive: bool = True) -> Association:
-    """
-    Get GWAS Catalog Associations by their Single Nucleotide Polymorphism identifier
+def _normalize_bool_param(value, param_name: str):
+    if value is None:
+        return None
 
-    ```Python
-    from pandasgwas.get_associations import *
-    associations = get_associations_by_variant_id('rs6538678')
-    ```
+    if isinstance(value, bool):
+        return "true" if value else "false"
 
-    Args:
-        variant_id: Single Nucleotide Polymorphism identifier, rsId in Single Nucleotide Polymorphism
-        interactive: Indicates whether to run in interactive mode, when the value is True and the query data is divided into many pages, the function will prompt whether to continue the download.
+    if isinstance(value, str):
+        value_std = value.strip().lower()
+        if value_std in {"true", "false"}:
+            return value_std
+        raise ValueError(
+            f"{param_name} must be None, bool, 'true' or 'false', got {value!r}"
+        )
 
-    Returns:
-        An Association object
-
-    """
-    return Association(client.get_associations(
-        'https://www.ebi.ac.uk/gwas/rest/api/singleNucleotidePolymorphisms/%s/associations' % variant_id,
-        interactive=interactive))
+    raise TypeError(
+        f"{param_name} must be None, bool, 'true' or 'false', got {type(value)}"
+    )
 
 
-def get_associations_by_efo_id(efo_id: str, interactive: bool = True) -> Association:
-    """
-    Get GWAS Catalog Associations by their EFO Trait identifier
+def _build_association_query_url(
+    pubmed_id=None,
+    rs_id=None,
+    full_pvalue_set=None,
+    accession_id=None,
+    efo_trait=None,
+    efo_id=None,
+    show_child_trait=None,
+    mapped_gene=None,
+    extended_geneset=None
+):
+    params = {
+        "pubmed_id": _normalize_str(pubmed_id),
+        "rs_id": _normalize_str(rs_id),
+        "full_pvalue_set": _normalize_bool_param(full_pvalue_set, "full_pvalue_set"),
+        "accession_id": _normalize_str(accession_id),
+        "efo_trait": _normalize_str(efo_trait),
+        "efo_id": _normalize_str(efo_id),
+        "show_child_trait": _normalize_bool_param(show_child_trait, "show_child_trait"),
+        "mapped_gene": _normalize_str(mapped_gene),
+        "extended_geneset": _normalize_bool_param(extended_geneset, "extended_geneset"),
+    }
 
-    ```Python
-    from pandasgwas.get_associations import *
-    associations = get_associations_by_efo_id('EFO_0001065')
-    ```
+    params = {k: v for k, v in params.items() if v is not None}
 
-    Args:
-        efo_id: EFO Trait identifier, shortForm in EFO Trait
-        interactive: indicates whether to run in interactive mode, when the value is True and the query data is divided into many pages, the function will prompt whether to continue the download.
+    if not params:
+        return BASE_URL
 
-    Returns:
-        An Association object
-
-    """
-    return Association(
-        client.get_associations('https://www.ebi.ac.uk/gwas/rest/api/efoTraits/%s/associations' % efo_id,
-                                interactive=interactive))
-
-
-def get_associations_by_pubmed_id(pubmed_id: str, interactive: bool = True) -> Association:
-    """
-    Get GWAS Catalog associations by PubMed identifiers
-
-    ```Python
-    from pandasgwas.get_associations import *
-    associations = get_associations_by_pubmed_id('21041247')
-    ```
-
-    Args:
-        pubmed_id: PubMed identifier
-        interactive: Indicates whether to run in interactive mode, when the value is True and the query data is divided into many pages, the function will prompt whether to continue the download.
-
-    Returns:
-        An Association object
-
-    """
-    return Association(client.get_associations(
-        'https://www.ebi.ac.uk/gwas/rest/api/associations/search/findByPubmedId?pubmedId=%s' % pubmed_id,
-        interactive=interactive))
+    return f"{BASE_URL}?{urlencode(params)}"
 
 
-def get_associations_by_efo_trait(efo_trait: str, interactive: bool = True) -> Association:
-    """
-    Gets associations that match trait description
+def get_associations(
+    association_id: str = None,
+    pubmed_id: str = None,
+    rs_id: str = None,
+    full_pvalue_set: bool = None,
+    accession_id: str = None,
+    efo_trait: str = None,
+    efo_id: str = None,
+    show_child_trait: bool = None,
+    mapped_gene: str = None,
+    extended_geneset: bool = None,
+    cached: bool = True,
+    mode: str = 'Fat'
+) -> Association:
+    association_id = _normalize_str(association_id)
 
-    ```Python
-    from pandasgwas.get_associations import *
-    associations = get_associations_by_efo_trait('MHPG measurement')
-    ```
+    query_url = _build_association_query_url(
+        pubmed_id=pubmed_id,
+        rs_id=rs_id,
+        full_pvalue_set=full_pvalue_set,
+        accession_id=accession_id,
+        efo_trait=efo_trait,
+        efo_id=efo_id,
+        show_child_trait=show_child_trait,
+        mapped_gene=mapped_gene,
+        extended_geneset=extended_geneset
+    )
 
-    Args:
-        efo_trait: Trait description
-        interactive: Indicates whether to run in interactive mode, when the value is True and the query data is divided into many pages, the function will prompt whether to continue the download.
+    has_id = association_id is not None
+    has_query_filters = query_url != BASE_URL
 
-    Returns:
-        An Association object
+    result_by_id = None
+    result_by_query = None
 
-    """
-    return Association(client.get_associations(
-        'https://www.ebi.ac.uk/gwas/rest/api/associations/search/findByEfoTrait?efoTrait=%s' % efo_trait,
-        interactive=interactive))
+    if has_id:
+        id_url = f"{BASE_URL}/{quote(association_id)}"
+        result_by_id = Association(
+            data=get_association(id_url, cached=cached),
+            mode=mode
+        )
 
+    # 无筛选参数时，这里会直接查全部
+    if not has_id or has_query_filters:
+        result_by_query = Association(
+            data=get_association(query_url, cached=cached),
+            mode=mode
+        )
 
-def get_associations_all(interactive: bool = True) -> Association:
-    """
-    Gets all associations
+    # 同时有 association_id 和普通筛选参数：取交集
+    if has_id and has_query_filters:
+        return result_by_id & result_by_query
 
-    ```Python
-    from pandasgwas.get_associations import *
-    associations = get_associations_all()
-    ```
+    # 只有 association_id
+    if has_id and not has_query_filters:
+        return result_by_id
 
-    Args:
-        interactive: Indicates whether to run in interactive mode, when the value is True and the query data is divided into many pages, the function will prompt whether to continue the download.
-
-    Returns:
-        An Association object
-
-    """
-    return Association(
-        client.get_associations('https://www.ebi.ac.uk/gwas/rest/api/associations', interactive=interactive))
-
-
-def get_associations(study_id: str = None, association_id: str = None, variant_id: str = None, efo_id: str = None,
-                     pubmed_id: str = None, efo_trait: str = None, set_operation: str = 'bind',
-                     interactive: bool = True) -> Association:
-    """
-    Retrieves Associations via the NHGRI-EBI GWAS Catalog REST API. The REST API is queried multiple times with the criteria passed as arguments. By default all Associations that match the criteria supplied in the arguments are retrieved: this corresponds to the default set_operation set to 'bind', If you rather have only the Associations that match simultaneously all criteria provided, then set set_operation to 'intersection'.
-
-    ```Python
-    from pandasgwas.get_associations import *
-    associations = get_associations(association_id='16603')
-    ```
-
-    Args:
-        study_id: Study identifier, accessionId in Study
-        association_id: Association identifier, associationId in Association
-        variant_id: Single Nucleotide Polymorphism identifier, rsId in Single Nucleotide Polymorphism
-        efo_id:  EFO Trait identifier, shortForm in EFO Trait
-        pubmed_id: PubMed identifier
-        efo_trait: Trait description
-        set_operation: "bind" or "intersection"
-        interactive:  Indicates whether to run in interactive mode, when the value is True and the query data is divided into many pages, the function will prompt whether to continue the download.
-
-    Returns:
-        An Association object
-
-    """
-    if study_id is None and association_id is None and variant_id is None and efo_id is None and pubmed_id is None and efo_trait is None:
-        return Association(
-            client.get_associations('https://www.ebi.ac.uk/gwas/rest/api/associations', interactive=interactive))
-    associations = {}
-    if study_id is not None:
-        associations['study_id'] = client.get_associations(
-            'https://www.ebi.ac.uk/gwas/rest/api/studies/%s/associations' % study_id,
-            interactive=interactive)
-
-    if association_id is not None:
-        associations['association_id'] = client.get_associations(
-            'https://www.ebi.ac.uk/gwas/rest/api/associations/%s' % association_id,
-            interactive=interactive)
-
-    if variant_id is not None:
-        associations['associations'] = client.get_associations(
-            'https://www.ebi.ac.uk/gwas/rest/api/singleNucleotidePolymorphisms/%s/associations' % variant_id,
-            interactive=interactive)
-
-    if efo_id is not None:
-        associations['associations'] = client.get_associations(
-            'https://www.ebi.ac.uk/gwas/rest/api/efoTraits/%s/associations' % efo_id,
-            interactive=interactive)
-
-    if pubmed_id is not None:
-        associations['pubmed_id'] = client.get_associations(
-            'https://www.ebi.ac.uk/gwas/rest/api/associations/search/findByPubmedId?pubmedId=%s' % pubmed_id,
-            interactive=interactive)
-
-    if efo_trait is not None:
-        associations['efo_trait'] = client.get_associations(
-            'https://www.ebi.ac.uk/gwas/rest/api/associations/search/findByEfoTrait?efoTrait=%s' % efo_trait,
-            interactive=interactive)
-    if set_operation == 'bind':
-        all_data = []
-        for singe_get in associations.values():
-            all_data.extend(singe_get)
-        return Association(all_data)
-    else:
-        associationId_dict = {}
-        associationId_sets = []
-        for singe_get in associations.values():
-            temp_set = set()
-            for i in singe_get:
-                associationId_dict[i.get('associationId')] = i
-                temp_set.add(i.get('associationId'))
-            associationId_sets.append(temp_set)
-        intersection_associationId = reduce(lambda x, y: x.intersection(y), associationId_sets)
-        intersection_result = []
-        for k in intersection_associationId:
-            intersection_result.append(associationId_dict.get(k))
-        return Association(intersection_result)
+    # 只有普通筛选参数，或全部为 None 时查全部
+    return result_by_query
