@@ -7,64 +7,6 @@ from pandasgwas.Association import Association
 BASE_URL = "https://www.ebi.ac.uk/gwas/rest/api/v2/associations"
 
 
-def _normalize_str(value):
-    if value is None:
-        return None
-    value = str(value).strip()
-    return value if value != "" else None
-
-
-def _normalize_bool_param(value, param_name: str):
-    if value is None:
-        return None
-
-    if isinstance(value, bool):
-        return "true" if value else "false"
-
-    if isinstance(value, str):
-        value_std = value.strip().lower()
-        if value_std in {"true", "false"}:
-            return value_std
-        raise ValueError(
-            f"{param_name} must be None, bool, 'true' or 'false', got {value!r}"
-        )
-
-    raise TypeError(
-        f"{param_name} must be None, bool, 'true' or 'false', got {type(value)}"
-    )
-
-
-def _build_association_query_url(
-    pubmed_id=None,
-    rs_id=None,
-    full_pvalue_set=None,
-    accession_id=None,
-    efo_trait=None,
-    efo_id=None,
-    show_child_trait=None,
-    mapped_gene=None,
-    extended_geneset=None
-):
-    params = {
-        "pubmed_id": _normalize_str(pubmed_id),
-        "rs_id": _normalize_str(rs_id),
-        "full_pvalue_set": _normalize_bool_param(full_pvalue_set, "full_pvalue_set"),
-        "accession_id": _normalize_str(accession_id),
-        "efo_trait": _normalize_str(efo_trait),
-        "efo_id": _normalize_str(efo_id),
-        "show_child_trait": _normalize_bool_param(show_child_trait, "show_child_trait"),
-        "mapped_gene": _normalize_str(mapped_gene),
-        "extended_geneset": _normalize_bool_param(extended_geneset, "extended_geneset"),
-    }
-
-    params = {k: v for k, v in params.items() if v is not None}
-
-    if not params:
-        return BASE_URL
-
-    return f"{BASE_URL}?{urlencode(params)}"
-
-
 def get_associations(
     association_id: str = None,
     pubmed_id: str = None,
@@ -79,19 +21,83 @@ def get_associations(
     cached: bool = True,
     mode: str = 'Fat'
 ) -> Association:
-    association_id = _normalize_str(association_id)
+    # normalize string params
+    association_id = None if association_id is None else str(association_id).strip()
+    if association_id == "":
+        association_id = None
 
-    query_url = _build_association_query_url(
-        pubmed_id=pubmed_id,
-        rs_id=rs_id,
-        full_pvalue_set=full_pvalue_set,
-        accession_id=accession_id,
-        efo_trait=efo_trait,
-        efo_id=efo_id,
-        show_child_trait=show_child_trait,
-        mapped_gene=mapped_gene,
-        extended_geneset=extended_geneset
-    )
+    pubmed_id_norm = None if pubmed_id is None else str(pubmed_id).strip()
+    if pubmed_id_norm == "":
+        pubmed_id_norm = None
+
+    rs_id_norm = None if rs_id is None else str(rs_id).strip()
+    if rs_id_norm == "":
+        rs_id_norm = None
+
+    accession_id_norm = None if accession_id is None else str(accession_id).strip()
+    if accession_id_norm == "":
+        accession_id_norm = None
+
+    efo_trait_norm = None if efo_trait is None else str(efo_trait).strip()
+    if efo_trait_norm == "":
+        efo_trait_norm = None
+
+    efo_id_norm = None if efo_id is None else str(efo_id).strip()
+    if efo_id_norm == "":
+        efo_id_norm = None
+
+    mapped_gene_norm = None if mapped_gene is None else str(mapped_gene).strip()
+    if mapped_gene_norm == "":
+        mapped_gene_norm = None
+
+    # normalize boolean-like params
+    if full_pvalue_set is None:
+        full_pvalue_set_norm = None
+    elif isinstance(full_pvalue_set, bool):
+        full_pvalue_set_norm = "true" if full_pvalue_set else "false"
+    elif isinstance(full_pvalue_set, str):
+        full_pvalue_set_norm = full_pvalue_set.strip().lower()
+        if full_pvalue_set_norm not in {"true", "false"}:
+            raise ValueError("full_pvalue_set must be None, bool, 'true' or 'false', got %r" % full_pvalue_set)
+    else:
+        raise TypeError("full_pvalue_set must be None, bool, 'true' or 'false', got %r" % type(full_pvalue_set))
+
+    if show_child_trait is None:
+        show_child_trait_norm = None
+    elif isinstance(show_child_trait, bool):
+        show_child_trait_norm = "true" if show_child_trait else "false"
+    elif isinstance(show_child_trait, str):
+        show_child_trait_norm = show_child_trait.strip().lower()
+        if show_child_trait_norm not in {"true", "false"}:
+            raise ValueError("show_child_trait must be None, bool, 'true' or 'false', got %r" % show_child_trait)
+    else:
+        raise TypeError("show_child_trait must be None, bool, 'true' or 'false', got %r" % type(show_child_trait))
+
+    if extended_geneset is None:
+        extended_geneset_norm = None
+    elif isinstance(extended_geneset, bool):
+        extended_geneset_norm = "true" if extended_geneset else "false"
+    elif isinstance(extended_geneset, str):
+        extended_geneset_norm = extended_geneset.strip().lower()
+        if extended_geneset_norm not in {"true", "false"}:
+            raise ValueError("extended_geneset must be None, bool, 'true' or 'false', got %r" % extended_geneset)
+    else:
+        raise TypeError("extended_geneset must be None, bool, 'true' or 'false', got %r" % type(extended_geneset))
+
+    params = {
+        "pubmed_id": pubmed_id_norm,
+        "rs_id": rs_id_norm,
+        "full_pvalue_set": full_pvalue_set_norm,
+        "accession_id": accession_id_norm,
+        "efo_trait": efo_trait_norm,
+        "efo_id": efo_id_norm,
+        "show_child_trait": show_child_trait_norm,
+        "mapped_gene": mapped_gene_norm,
+        "extended_geneset": extended_geneset_norm,
+    }
+
+    params = {k: v for k, v in params.items() if v is not None}
+    query_url = BASE_URL if not params else f"{BASE_URL}?{urlencode(params)}"
 
     has_id = association_id is not None
     has_query_filters = query_url != BASE_URL
@@ -106,20 +112,14 @@ def get_associations(
             mode=mode
         )
 
-    # 无筛选参数时，这里会直接查全部
     if not has_id or has_query_filters:
         result_by_query = Association(
             data=get_association(query_url, cached=cached),
             mode=mode
         )
 
-    # 同时有 association_id 和普通筛选参数：取交集
     if has_id and has_query_filters:
         return result_by_id & result_by_query
-
-    # 只有 association_id
     if has_id and not has_query_filters:
         return result_by_id
-
-    # 只有普通筛选参数，或全部为 None 时查全部
     return result_by_query

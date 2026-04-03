@@ -64,30 +64,79 @@ class Association:
         if data is None:
             data = []
         else:
-            data = [
-                self._coerce_association_id(item)
-                for item in data
-                if isinstance(item, dict)
-            ]
-
+            normalized_data = []
+            for item in data:
+                if not isinstance(item, dict):
+                    continue
+                rec = deepcopy(item)
+                if 'association_id' in rec and rec['association_id'] is not None:
+                    rec['association_id'] = str(rec['association_id'])
+                normalized_data.append(rec)
+            data = normalized_data
 
         self.mode = mode
 
         # Thin 模式：仅去掉 links/_links，其它不动
         if mode == "Thin":
-            self.raw_data = [self._remove_links_only(item) for item in data if isinstance(item, dict)]
+            raw_data = []
+            for item in data:
+                if not isinstance(item, dict):
+                    continue
+                rec = deepcopy(item)
+                rec.pop('links', None)
+                rec.pop('_links', None)
+                raw_data.append(rec)
+            self.raw_data = raw_data
             return
 
         # Fat 模式：先标准化字段名、去掉 links/_links、补齐缺失字段
         standardized_data = []
         for item in data:
-            if isinstance(item, dict):
-                standardized_data.append(self._standardize_record(item))
+            if not isinstance(item, dict):
+                continue
+
+            rec = deepcopy(item)
+            rec.pop('links', None)
+            rec.pop('_links', None)
+
+            normalized = {}
+            for key, value in rec.items():
+                std_key = self.FIELD_ALIASES.get(key, key)
+                normalized[std_key] = value
+
+            standardized = {}
+            for col in self.ASSOCIATION_COLUMNS:
+                value = normalized.get(col, None)
+                if col == 'range':
+                    if value is None:
+                        value = None
+                    elif isinstance(value, list):
+                        if len(value) == 0:
+                            value = None
+                        elif len(value) == 1:
+                            value = None if value[0] is None else str(value[0])
+                        else:
+                            value = '; '.join('' if v is None else str(v) for v in value)
+                    else:
+                        value = str(value)
+                standardized[col] = value
+
+            for field in self.NESTED_FIELDS:
+                standardized[field] = normalized.get(field, None)
+
+            standardized_data.append(standardized)
 
         self.raw_data = standardized_data
 
         if len(standardized_data) == 0:
-            self._init_empty_tables()
+            self.associations = DataFrame(columns=self.ASSOCIATION_COLUMNS)
+            self.efo_traits = DataFrame(columns=self.EFO_TRAITS_COLUMNS)
+            self.snp_allele = DataFrame(columns=self.SNP_ALLELE_COLUMNS)
+            self.bg_efo_traits = DataFrame(columns=self.BG_EFO_TRAITS_COLUMNS)
+            self.reported_traits = DataFrame(columns=self.REPORTED_TRAITS_COLUMNS)
+            self.locations = DataFrame(columns=self.LOCATIONS_COLUMNS)
+            self.mapped_genes = DataFrame(columns=self.MAPPED_GENES_COLUMNS)
+            self.snp_effect_alleles = DataFrame(columns=self.SNP_EFFECT_ALLELES_COLUMNS)
             return
 
         association_rows = []
@@ -108,7 +157,14 @@ class Association:
             })
 
             # efo_traits
-            for item in self._ensure_list(record.get('efo_traits', None)):
+            raw_efo_traits = record.get('efo_traits', None)
+            if raw_efo_traits is None:
+                iterable_efo_traits = []
+            elif isinstance(raw_efo_traits, list):
+                iterable_efo_traits = raw_efo_traits
+            else:
+                iterable_efo_traits = [raw_efo_traits]
+            for item in iterable_efo_traits:
                 if isinstance(item, dict):
                     efo_traits_rows.append({
                         'association_id': association_id,
@@ -123,7 +179,14 @@ class Association:
                     })
 
             # snp_allele
-            for item in self._ensure_list(record.get('snp_allele', None)):
+            raw_snp_allele = record.get('snp_allele', None)
+            if raw_snp_allele is None:
+                iterable_snp_allele = []
+            elif isinstance(raw_snp_allele, list):
+                iterable_snp_allele = raw_snp_allele
+            else:
+                iterable_snp_allele = [raw_snp_allele]
+            for item in iterable_snp_allele:
                 if isinstance(item, dict):
                     snp_allele_rows.append({
                         'association_id': association_id,
@@ -138,7 +201,14 @@ class Association:
                     })
 
             # bg_efo_traits
-            for item in self._ensure_list(record.get('bg_efo_traits', None)):
+            raw_bg_efo_traits = record.get('bg_efo_traits', None)
+            if raw_bg_efo_traits is None:
+                iterable_bg_efo_traits = []
+            elif isinstance(raw_bg_efo_traits, list):
+                iterable_bg_efo_traits = raw_bg_efo_traits
+            else:
+                iterable_bg_efo_traits = [raw_bg_efo_traits]
+            for item in iterable_bg_efo_traits:
                 if isinstance(item, dict):
                     bg_efo_traits_rows.append({
                         'association_id': association_id,
@@ -153,116 +223,69 @@ class Association:
                     })
 
             # reported_traits（属性名保持不变，数据字段统一用 reported_trait）
-            for item in self._ensure_list(record.get('reported_trait', None)):
+            raw_reported_trait = record.get('reported_trait', None)
+            if raw_reported_trait is None:
+                iterable_reported_trait = []
+            elif isinstance(raw_reported_trait, list):
+                iterable_reported_trait = raw_reported_trait
+            else:
+                iterable_reported_trait = [raw_reported_trait]
+            for item in iterable_reported_trait:
                 reported_traits_rows.append({
                     'association_id': association_id,
                     'reported_trait': item
                 })
 
             # locations
-            for item in self._ensure_list(record.get('locations', None)):
+            raw_locations = record.get('locations', None)
+            if raw_locations is None:
+                iterable_locations = []
+            elif isinstance(raw_locations, list):
+                iterable_locations = raw_locations
+            else:
+                iterable_locations = [raw_locations]
+            for item in iterable_locations:
                 locations_rows.append({
                     'association_id': association_id,
                     'location': item
                 })
 
             # mapped_genes
-            for item in self._ensure_list(record.get('mapped_genes', None)):
+            raw_mapped_genes = record.get('mapped_genes', None)
+            if raw_mapped_genes is None:
+                iterable_mapped_genes = []
+            elif isinstance(raw_mapped_genes, list):
+                iterable_mapped_genes = raw_mapped_genes
+            else:
+                iterable_mapped_genes = [raw_mapped_genes]
+            for item in iterable_mapped_genes:
                 mapped_genes_rows.append({
                     'association_id': association_id,
                     'mapped_gene': item
                 })
 
             # snp_effect_alleles（属性名保持不变，数据字段统一用 snp_effect_allele）
-            for item in self._ensure_list(record.get('snp_effect_allele', None)):
+            raw_snp_effect_allele = record.get('snp_effect_allele', None)
+            if raw_snp_effect_allele is None:
+                iterable_snp_effect_allele = []
+            elif isinstance(raw_snp_effect_allele, list):
+                iterable_snp_effect_allele = raw_snp_effect_allele
+            else:
+                iterable_snp_effect_allele = [raw_snp_effect_allele]
+            for item in iterable_snp_effect_allele:
                 snp_effect_alleles_rows.append({
                     'association_id': association_id,
                     'snp_effect_allele': item
                 })
 
-        self.associations = self._build_df(association_rows, self.ASSOCIATION_COLUMNS)
-        self.efo_traits = self._build_df(efo_traits_rows, self.EFO_TRAITS_COLUMNS)
-        self.snp_allele = self._build_df(snp_allele_rows, self.SNP_ALLELE_COLUMNS)
-        self.bg_efo_traits = self._build_df(bg_efo_traits_rows, self.BG_EFO_TRAITS_COLUMNS)
-        self.reported_traits = self._build_df(reported_traits_rows, self.REPORTED_TRAITS_COLUMNS)
-        self.locations = self._build_df(locations_rows, self.LOCATIONS_COLUMNS)
-        self.mapped_genes = self._build_df(mapped_genes_rows, self.MAPPED_GENES_COLUMNS)
-        self.snp_effect_alleles = self._build_df(snp_effect_alleles_rows, self.SNP_EFFECT_ALLELES_COLUMNS)
-
-    def _init_empty_tables(self):
-        self.associations = DataFrame(columns=self.ASSOCIATION_COLUMNS)
-        self.efo_traits = DataFrame(columns=self.EFO_TRAITS_COLUMNS)
-        self.snp_allele = DataFrame(columns=self.SNP_ALLELE_COLUMNS)
-        self.bg_efo_traits = DataFrame(columns=self.BG_EFO_TRAITS_COLUMNS)
-        self.reported_traits = DataFrame(columns=self.REPORTED_TRAITS_COLUMNS)
-        self.locations = DataFrame(columns=self.LOCATIONS_COLUMNS)
-        self.mapped_genes = DataFrame(columns=self.MAPPED_GENES_COLUMNS)
-        self.snp_effect_alleles = DataFrame(columns=self.SNP_EFFECT_ALLELES_COLUMNS)
-
-    @staticmethod
-    def _build_df(rows, columns):
-        if len(rows) == 0:
-            return DataFrame(columns=columns)
-        return DataFrame(rows).reindex(columns=columns)
-
-    @staticmethod
-    def _ensure_list(value):
-        if value is None:
-            return []
-        if isinstance(value, list):
-            return value
-        return [value]
-
-    @staticmethod
-    def _coerce_association_id(record: dict) -> dict:
-        rec = deepcopy(record)
-        if 'association_id' in rec and rec['association_id'] is not None:
-            rec['association_id'] = str(rec['association_id'])
-        return rec
-    @staticmethod
-    def _remove_links_only(record: dict) -> dict:
-        rec = deepcopy(record)
-        rec.pop('links', None)
-        rec.pop('_links', None)
-        return rec
-
-    def _standardize_record(self, record: dict) -> dict:
-        record = self._remove_links_only(record)
-
-        # 第一步：字段别名统一成示例字段名
-        normalized = {}
-        for key, value in record.items():
-            std_key = self.FIELD_ALIASES.get(key, key)
-            normalized[std_key] = value
-
-        # 第二步：主表字段全部补齐，缺失为 None
-        standardized = {}
-        for col in self.ASSOCIATION_COLUMNS:
-            value = normalized.get(col, None)
-
-            # range 最终统一保留字符串
-            if col == 'range':
-                value = self._normalize_range(value)
-
-            standardized[col] = value
-
-        # 第三步：嵌套字段统一补齐
-        for field in self.NESTED_FIELDS:
-            standardized[field] = normalized.get(field, None)
-
-        return standardized
-
-    @staticmethod
-    def _normalize_range(value):
-        if value is None:
-            return None
-        if isinstance(value, list):
-            if len(value) == 0:
-                return None
-            if len(value) == 1:
-                return None if value[0] is None else str(value[0])
-            return '; '.join('' if v is None else str(v) for v in value)
-        return str(value)
+        self.associations = DataFrame(association_rows).reindex(columns=self.ASSOCIATION_COLUMNS) if len(association_rows) else DataFrame(columns=self.ASSOCIATION_COLUMNS)
+        self.efo_traits = DataFrame(efo_traits_rows).reindex(columns=self.EFO_TRAITS_COLUMNS) if len(efo_traits_rows) else DataFrame(columns=self.EFO_TRAITS_COLUMNS)
+        self.snp_allele = DataFrame(snp_allele_rows).reindex(columns=self.SNP_ALLELE_COLUMNS) if len(snp_allele_rows) else DataFrame(columns=self.SNP_ALLELE_COLUMNS)
+        self.bg_efo_traits = DataFrame(bg_efo_traits_rows).reindex(columns=self.BG_EFO_TRAITS_COLUMNS) if len(bg_efo_traits_rows) else DataFrame(columns=self.BG_EFO_TRAITS_COLUMNS)
+        self.reported_traits = DataFrame(reported_traits_rows).reindex(columns=self.REPORTED_TRAITS_COLUMNS) if len(reported_traits_rows) else DataFrame(columns=self.REPORTED_TRAITS_COLUMNS)
+        self.locations = DataFrame(locations_rows).reindex(columns=self.LOCATIONS_COLUMNS) if len(locations_rows) else DataFrame(columns=self.LOCATIONS_COLUMNS)
+        self.mapped_genes = DataFrame(mapped_genes_rows).reindex(columns=self.MAPPED_GENES_COLUMNS) if len(mapped_genes_rows) else DataFrame(columns=self.MAPPED_GENES_COLUMNS)
+        self.snp_effect_alleles = DataFrame(snp_effect_alleles_rows).reindex(columns=self.SNP_EFFECT_ALLELES_COLUMNS) if len(snp_effect_alleles_rows) else DataFrame(columns=self.SNP_EFFECT_ALLELES_COLUMNS)
 
     def __str__(self):
         if self.mode == 'Fat':
