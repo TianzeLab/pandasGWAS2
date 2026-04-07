@@ -1,67 +1,56 @@
-from pandasgwas.get_associations import *
-
-
-def test_get_associations_by_study_id():
-    df = get_associations_by_study_id('GCST000854')
-    assert df.associations.size == 19 * 4
-    assert df.loci.size == 6 * 4
-    assert df.strongest_risk_alleles.size == 6 * 4
-    assert df.author_reported_genes.size == 6 * 6
-    assert df.entrez_gene_ids.size == 4 * 5
-    assert df.ensembl_gene_ids.size == 4 * 5
-
-
-def test_get_associations_by_association_id():
-    df = get_associations_by_association_id('16603')
-    assert df.associations.size == 19 * 1
-    assert df.loci.size == 6 * 1
-    assert df.strongest_risk_alleles.size == 6 * 1
-    assert df.author_reported_genes.size == 6 * 1
-    assert df.entrez_gene_ids.size == 4 * 0
-    assert df.ensembl_gene_ids.size == 4 * 0
-
-
-def test_get_associations_by_variant_id():
-    df = get_associations_by_variant_id('rs6538678')
-    assert df.associations.size == 19 * 1
-    assert df.loci.size == 6 * 1
-    assert df.strongest_risk_alleles.size == 6 * 1
-    assert df.author_reported_genes.size == 6 * 2
-    assert df.entrez_gene_ids.size == 4 * 1
-    assert df.ensembl_gene_ids.size == 4 * 1
-
-
-def test_get_associations_by_efo_id():
-    df = get_associations_by_efo_id('EFO_0001065')
-    assert df.associations.size == 19 * 390
-
-
-def test_get_associations_by_pubmed_id():
-    df = get_associations_by_pubmed_id('21041247')
-    assert df.associations.size == 19 * 4
-
-
-def test_get_associations_by_efo_trait():
-    df = get_associations_by_efo_trait('MHPG measurement')
-    assert df.associations.size == 19 * 56
-
-
-def test_get_associations_all():
-    assert True
+from pandasgwas.get_associations import get_associations
 
 
 def test_get_associations():
-    df = get_associations(study_id='GCST000854', association_id='16603')
-    assert df.associations.size == 19 * 5
-    df = get_associations(study_id='GCST000854', association_id='16603',set_operation='bind')
-    assert df.associations.size == 19 * 5
-    df = get_associations(study_id='GCST000854', association_id='16603', set_operation='intersection')
-    assert df.associations.size == 19 * 1
-    df = get_associations(variant_id='rs6538678')
-    assert df.associations.size == 19 * 1
-    df = get_associations(efo_id='EFO_0001065', set_operation='bind')
-    assert df.associations.size == 19 * 390
-    df = get_associations(pubmed_id='21041247', set_operation='intersection')
-    assert df.associations.size == 19 * 4
-    df = get_associations(efo_trait='MHPG measurement')
-    assert df.associations.size == 19 * 56
+    association_a = get_associations(association_id='169106883', mode='Thin')
+    association_a = get_associations(association_id='169106883')
+
+    assert len(association_a) == 1
+    assert association_a.associations.shape[0] == 1
+    assert association_a.associations.iloc[0]['association_id'] == '169106883'
+
+    association_b = get_associations(pubmed_id='35241825')
+    assert len(association_b) >= 1
+
+    association_c = get_associations(rs_id='rs3093017')
+    assert len(association_c) >= 1
+
+    association_d = get_associations(accession_id='GCST000854')
+    assert len(association_d) >= 1
+
+    association_e = get_associations(efo_trait='celiac disease')
+    assert len(association_e) >= 1
+
+    association_f = get_associations(efo_id='EFO_0001060')
+    assert len(association_f) >= 1
+
+    association_g = get_associations(mapped_gene='CCR6,HBS1L')
+    assert len(association_g) >= 1
+
+    association_h = get_associations(accession_id='GCST000854', full_pvalue_set=True)
+    assert len(association_h) >= 0
+
+    association_i = get_associations(efo_id='EFO_0001060', show_child_trait=True)
+    assert len(association_i) >= 1
+
+    association_j = get_associations(mapped_gene='CCR6,HBS1L', extended_geneset=True)
+    assert len(association_j) >= 1
+
+    association_a = get_associations(association_id='169106883')
+    association_b = get_associations(accession_id='GCST000854')
+
+    assert association_a[0] == association_a
+    assert association_a['169106883'] == association_a
+
+    assert len(association_b[0:2]) == 2
+    assert len(association_b[range(2)]) == 2
+    assert association_b[0] == association_b[association_b.raw_data[0]['association_id']]
+
+    assert len(association_a + association_b[0]) >= 1
+    assert len(association_b - association_b[0]) == len(association_b) - 1
+    assert len(association_b & association_b[0]) == 1
+    assert len(association_b | association_b[0]) == len(association_b)
+    assert len(association_b ^ association_b[0]) == len(association_b) - 1
+
+    association_c = get_associations(association_id='169106883')
+    assert association_c == association_a

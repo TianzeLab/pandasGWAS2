@@ -5,9 +5,7 @@ from pandasgwas.Browser import open_in_pubmed, open_in_dbsnp, open_in_gtex, open
 from pandasgwas.Study import Study
 from pandasgwas.Trait import Trait
 from pandasgwas.Variant import Variant
-from pandasgwas.get_associations import get_associations_by_study_id, get_associations_by_association_id, \
-    get_associations_by_variant_id, get_associations_by_efo_id, get_associations_by_pubmed_id, \
-    get_associations_by_efo_trait, get_associations_all, get_associations
+from pandasgwas.get_associations import get_associations
 from pandasgwas.get_studies import get_studies_by_study_id, get_studies_by_association_id, get_studies_by_variant_id, \
     get_studies_by_efo_id, get_studies_by_pubmed_id, get_studies_by_user_requested, get_studies_by_full_pvalue_set, \
     get_studies_by_efo_uri, get_studies_by_efo_trait, get_studies_by_reported_trait, get_studies_all, get_studies

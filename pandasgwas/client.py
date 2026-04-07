@@ -145,9 +145,15 @@ def get_data(url: str, cache_impl=None, cached=True, type=None) -> List[Dict]:
                         bar.update(progress)
                         next = parsed_data.get('_links').get('next')
                     bar.finish()
-                return results_list
-            else:
-                return [parsed_data]
+                    for item in results_list:
+                        if isinstance(item, dict):
+                            item.pop('links', None)
+                            item.pop('_links', None)
+                    return results_list
+                else:
+                    parsed_data.pop('links', None)
+                    parsed_data.pop('_links', None)
+                    return [parsed_data]
         elif r.status_code == 404:
             return []
         else:
@@ -160,7 +166,3 @@ def ask_yes_no_question(question: str) -> str:
     while yes_no_answer != "YES" and yes_no_answer != "NO":
         yes_no_answer = input(question).upper()
     return yes_no_answer
-
-
-# a = get_association('https://www.ebi.ac.uk/gwas/rest/api/v2/associations?pubmed_id=35241825', cached=True)
-# print(a)

@@ -76,15 +76,12 @@ class Association:
 
         self.mode = mode
 
-        # Thin 模式：仅去掉 links/_links，其它不动
         if mode == "Thin":
             raw_data = []
             for item in data:
                 if not isinstance(item, dict):
                     continue
                 rec = deepcopy(item)
-                rec.pop('links', None)
-                rec.pop('_links', None)
                 raw_data.append(rec)
             self.raw_data = raw_data
             return
@@ -96,8 +93,6 @@ class Association:
                 continue
 
             rec = deepcopy(item)
-            rec.pop('links', None)
-            rec.pop('_links', None)
 
             normalized = {}
             for key, value in rec.items():
