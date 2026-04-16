@@ -150,10 +150,10 @@ def get_data(url: str, cache_impl=None, cached=True, type=None) -> List[Dict]:
                             item.pop('links', None)
                             item.pop('_links', None)
                     return results_list
-                else:
-                    parsed_data.pop('links', None)
-                    parsed_data.pop('_links', None)
-                    return [parsed_data]
+            else:
+                parsed_data.pop('links', None)
+                parsed_data.pop('_links', None)
+                return [parsed_data]
         elif r.status_code == 404:
             return []
         else:

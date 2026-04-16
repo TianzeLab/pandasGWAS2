@@ -38,24 +38,19 @@ class Association:
     SNP_ALLELE_COLUMNS = ['association_id', 'rs_id', 'effect_allele']
     BG_EFO_TRAITS_COLUMNS = ['association_id', 'efo_id', 'efo_trait']
     REPORTED_TRAITS_COLUMNS = ['association_id', 'reported_trait']
-    LOCATIONS_COLUMNS = ['association_id', 'location']
-    MAPPED_GENES_COLUMNS = ['association_id', 'mapped_gene']
+    LOCATIONS_COLUMNS = ['association_id', 'locations']
+    MAPPED_GENES_COLUMNS = ['association_id', 'mapped_genes']
     SNP_EFFECT_ALLELES_COLUMNS = ['association_id', 'snp_effect_allele']
 
-    # 真实字段名 -> 示例字段名
-    FIELD_ALIASES = {
-        'reported_traits': 'reported_trait',
-        'snp_effect_alleles': 'snp_effect_allele'
-    }
 
     NESTED_FIELDS = [
         'efo_traits',
-        'snp_allele',
+        'snp_alleles',
         'bg_efo_traits',
-        'reported_trait',
+        'reported_traits',
         'locations',
         'mapped_genes',
-        'snp_effect_allele'
+        'snp_effect_alleles'
     ]
 
     def __init__(self, data: list = None, mode: str = "Fat"):
@@ -96,8 +91,7 @@ class Association:
 
             normalized = {}
             for key, value in rec.items():
-                std_key = self.FIELD_ALIASES.get(key, key)
-                normalized[std_key] = value
+                normalized[key] = value
 
             standardized = {}
             for col in self.ASSOCIATION_COLUMNS:
