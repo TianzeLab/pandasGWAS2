@@ -1,102 +1,56 @@
-from pandasgwas.get_studies import *
-
-
-def test_get_studies_by_study_id():
-    df = get_studies_by_study_id("GCST000854", interactive=False)
-    assert df.studies.size == 22
-    assert df.platforms.size == 2
-    assert df.genotyping_technologies.size == 2
-    assert df.ancestries.size == 7 * 3
-    assert df.ancestral_groups.size == 3 * 3
-    assert df.country_of_origin.size == 5 * 0
-    assert df.country_of_recruitment.size == 5 * 2
-
-
-def test_get_studies_by_association_id():
-    df = get_studies_by_association_id("16510553", interactive=False)
-    assert df.studies.size == 22 * 1
-    assert df.platforms.size == 2 * 1
-    assert df.genotyping_technologies.size == 2 * 1
-    assert df.ancestries.size == 7 * 2
-    assert df.ancestral_groups.size == 3 * 2
-    assert df.country_of_origin.size == 5 * 2
-    assert df.country_of_recruitment.size == 5 * 2
-
-
-def test_get_studies_by_variant_id():
-    df = get_studies_by_variant_id("rs7329174", interactive=False)
-    assert df.studies.size == 22 * 5
-    assert df.platforms.size == 2 * 4
-    assert df.genotyping_technologies.size == 2 * 5
-    assert df.ancestries.size == 7 * 13
-    assert df.ancestral_groups.size == 3 * 13
-    assert df.country_of_origin.size == 5 * 5
-    assert df.country_of_recruitment.size == 5 * 15
-
-
-def test_get_studies_by_efo_id():
-    df = get_studies_by_efo_id('EFO_0005133', interactive=False)
-    assert df.studies.size == 22 * 3
-    assert df.platforms.size == 2 * 3
-    assert df.genotyping_technologies.size == 2 * 3
-    assert df.ancestries.size == 7 * 3
-    assert df.ancestral_groups.size == 3 * 3
-    assert df.country_of_origin.size == 5 * 18
-    assert df.country_of_recruitment.size == 5 * 3
-
-
-def test_get_studies_by_pubmed_id():
-    df = get_studies_by_pubmed_id('21041247', interactive=False)
-    assert df.studies.size == 22
-    assert df.platforms.size == 2
-    assert df.genotyping_technologies.size == 2
-    assert df.ancestries.size == 21
-    assert df.ancestral_groups.size == 3 * 3
-    assert df.country_of_origin.size == 0
-    assert df.country_of_recruitment.size == 5 * 2
-
-
-def test_get_studies_by_user_requested():
-    df = get_studies_by_user_requested(True, interactive=False)
-    assert df.studies.size == 22 * 365
-
-
-def test_get_studies_by_full_pvalue_set():
-    df = get_studies_by_full_pvalue_set(False, interactive=False)
-    assert df.studies.size == 22 * 13092
-
-
-def test_get_studies_by_efo_uri():
-    df = get_studies_by_efo_uri('http://www.ebi.ac.uk/efo/EFO_0005133', interactive=False)
-    assert df.studies.size == 22 * 3
-
-
-def test_get_studies_by_efo_trait():
-    df = get_studies_by_efo_trait('MHPG measurement', interactive=False)
-    assert df.studies.size == 22 * 3
-
-
-def test_get_studies_by_reported_trait():
-    df = get_studies_by_reported_trait('Vitamin D levels', interactive=False)
-    assert df.studies.size == 22 * 13
-
-
-def test_get_studies_all(interactive=False):
-    assert True
+from pandasgwas.get_studies import get_studies
 
 
 def test_get_studies():
-    df = get_studies(study_id='GCST000854', association_id='16510553')
-    assert df.studies.size == 22 * 2
-    df = get_studies(variant_id='rs7329174', efo_id='EFO_0005133', set_operation='intersection')
-    assert df.studies.size == 0
-    df = get_studies(pubmed_id='21041247')
-    assert df.studies.size == 22 * 1
-    df = get_studies(user_requested=True, set_operation='bind')
-    assert df.studies.size == 22 * 365
-    df = get_studies(full_pvalue_set=False, set_operation='intersection', interactive=False)
-    assert df.studies.size == 22 * 13092
-    df = get_studies(efo_uri='http://www.ebi.ac.uk/efo/EFO_0005133', efo_trait='MHPG measurement')
-    assert df.studies.size == 22 * 6
-    df = get_studies(reported_trait='Vitamin D levels')
-    assert df.studies.size == 22 * 13
+    study_a = get_studies(accession_id='GCST000854', mode='Thin')
+    study_a = get_studies(accession_id='GCST000854')
+
+    assert len(study_a) == 1
+    assert study_a.studies.shape[0] == 1
+    assert study_a.studies.iloc[0]['accession_id'] == 'GCST000854'
+
+    study_b = get_studies(pubmed_id='35241825')
+    assert len(study_b) >= 1
+
+    study_c = get_studies(disease_trait="Early-onset Parkinson's disease")
+    assert len(study_c) >= 1
+
+    study_d = get_studies(accession_id='GCST000854', full_pvalue_set=False)
+    assert len(study_d) >= 1
+
+    study_e = get_studies(efo_id='EFO_0001060')
+    assert len(study_e) >= 1
+
+    study_f = get_studies(efo_trait='celiac disease')
+    assert len(study_f) >= 1
+
+    study_g = get_studies(cohort='BioImage')
+    assert len(study_g) >= 1
+
+    study_k = get_studies(efo_id='EFO_0001060', show_child_trait=True)
+    assert len(study_k) >= 1
+
+    study_l = get_studies(mapped_gene='CCR6,HBS1L')
+    assert len(study_l) >= 1
+
+    study_m = get_studies(mapped_gene='CCR6,HBS1L', extended_geneset=True)
+    assert len(study_m) >= 1
+
+    study_a = get_studies(accession_id='GCST000854')
+    study_b = get_studies(pubmed_id='35241825')
+
+    assert study_a[0] == study_a
+    assert study_a['GCST000854'] == study_a
+
+    assert len(study_b[0:2]) == 2
+    assert len(study_b[range(2)]) == 2
+    assert study_b[0] == study_b[study_b.raw_data[0]['accession_id']]
+
+    assert len(study_a + study_b[0]) >= 1
+    assert len(study_b - study_b[0]) == len(study_b) - 1
+    assert len(study_b & study_b[0]) == 1
+    assert len(study_b | study_b[0]) == len(study_b)
+    assert len(study_b ^ study_b[0]) == len(study_b) - 1
+
+    study_c = get_studies(accession_id='GCST000854')
+    assert study_c == study_a

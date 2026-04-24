@@ -28,7 +28,7 @@ def test_get_associations():
     assert len(association_g) >= 1
 
     association_h = get_associations(accession_id='GCST000854', full_pvalue_set=True)
-    assert len(association_h) >= 0
+    assert len(association_h) >= 1
 
     association_i = get_associations(efo_id='EFO_0001060', show_child_trait=True)
     assert len(association_i) >= 1

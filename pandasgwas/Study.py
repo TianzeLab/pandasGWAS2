@@ -1,6 +1,5 @@
-from pandas import DataFrame, Series, json_normalize, set_option
-import numpy
-import warnings
+from copy import deepcopy
+from pandas import DataFrame, set_option
 
 set_option('display.max_columns', None)
 set_option('display.width', 1000)
@@ -9,188 +8,420 @@ set_option('display.precision', 3)
 
 
 class Study:
-    """
-    Python class to represent a set of GWAS Catalog Study. For more information, see "[GWAS CATALOG API Guide](https://www.ebi.ac.uk/gwas/rest/docs/api)"
+    STUDY_COLUMNS = [
+        'initial_sample_size',
+        'replication_sample_size',
+        'study_id',
+        'gxe',
+        'gxg',
+        'snp_count',
+        'qualifier',
+        'imputed',
+        'pooled',
+        'accession_id',
+        'user_requested',
+        'pubmed_id',
+        'platforms',
+        'disease_trait',
+        'terms_of_license',
+        'full_summary_stats_available'
+    ]
 
-    ```Python
-    # get Study by study_id
-    from pandasgwas.get_studies import get_studies
-    studies = get_studies(study_id='GCST000854')
-    ```
+    EFO_TRAITS_COLUMNS = ['accession_id', 'efo_id', 'efo_trait']
+    GENOTYPING_TECHNOLOGIES_COLUMNS = ['accession_id', 'genotyping_technologies']
+    DISCOVERY_ANCESTRIES_COLUMNS = ['accession_id', 'discovery_ancestry']
+    REPLICATION_ANCESTRIES_COLUMNS = ['accession_id', 'replication_ancestry']
+    FULL_SUMMARY_STATS_COLUMNS = ['accession_id', 'full_summary_stats']
+    BG_EFO_TRAITS_COLUMNS = ['accession_id', 'efo_id', 'efo_trait']
+    COHORTS_COLUMNS = ['accession_id', 'cohort']
+    ARRAY_MANUFACTURERS_COLUMNS = ['accession_id', 'array_manufacturer']
 
-    Attributes:
-        studies: pandas.DataFrame. A DataFrame to represent all queried Studies from GWAS Catalog REST API
-        platforms:pandas.DataFrame. A DataFrame to represent column platforms from studies
-        ancestries:pandas.DataFrame. A DataFrame to represent column ancestries from studies
-        genotypingTechnologies: pandas.DataFrame. A DataFrame to represent column genotypingTechnologies from studies
-        ancestralGroups: pandas.DataFrame. A DataFrame to represent column ancestralGroups from ancestries
-        countriesOfOrigin:pandas.DataFrame. A DataFrame to represent column countriesOfOrigin from ancestries
-        countriesOfRecruitment: pandas.DataFrame. A DataFrame to represent column countriesOfOrigin from ancestries
-    """
-    def __init__(self, data: list = None):
+
+    NESTED_FIELDS = [
+        'efo_traits',
+        'genotyping_technologies',
+        'discovery_ancestry',
+        'replication_ancestry',
+        'full_summary_stats',
+        'bg_efo_traits',
+        'cohort',
+        'array_manufacturer'
+    ]
+
+    def __init__(self, data: list = None, mode: str = "Fat"):
+        if mode not in ['Thin', 'Fat']:
+            raise Exception("Mode must be Fat or Thin")
         if data is None:
             data = []
-        self.parse(data)
+        else:
+            normalized_data = []
+            for item in data:
+                if not isinstance(item, dict):
+                    continue
+                rec = deepcopy(item)
+                if 'accession_id' in rec and rec['accession_id'] is not None:
+                    rec['accession_id'] = str(rec['accession_id'])
+                normalized_data.append(rec)
+            data = normalized_data
 
-    def __str__(self) -> str:
-        class_str = (
-            'Study has 7 DataFrames with hierarchical dependencies.\nstudies\n|\n -platforms\n|\n -ancestries\n    '
-            '|\n     -ancestral_groups\n    |\n     -countries_of_origin\n    |\n     -countries_recruitment\n|\n '
-            '-geontyping_tcchnologies')
-        return class_str
-    
-    def __repr__(self) -> str:
+        self.mode = mode
+
+        if mode == "Thin":
+            raw_data = []
+            for item in data:
+                if not isinstance(item, dict):
+                    continue
+                rec = deepcopy(item)
+                raw_data.append(rec)
+            self.raw_data = raw_data
+            return
+
+        standardized_data = []
+        for item in data:
+            if not isinstance(item, dict):
+                continue
+
+            rec = deepcopy(item)
+
+            normalized = {}
+            for key, value in rec.items():
+                normalized[key] = value
+
+            standardized = {}
+            for col in self.STUDY_COLUMNS:
+                value = normalized.get(col, None)
+                standardized[col] = value
+
+            for field in self.NESTED_FIELDS:
+                standardized[field] = normalized.get(field, None)
+
+            standardized_data.append(standardized)
+
+        self.raw_data = standardized_data
+
+        if len(standardized_data) == 0:
+            self.studies = DataFrame(columns=self.STUDY_COLUMNS)
+            self.efo_traits = DataFrame(columns=self.EFO_TRAITS_COLUMNS)
+            self.genotyping_technologies = DataFrame(columns=self.GENOTYPING_TECHNOLOGIES_COLUMNS)
+            self.discovery_ancestries = DataFrame(columns=self.DISCOVERY_ANCESTRIES_COLUMNS)
+            self.replication_ancestries = DataFrame(columns=self.REPLICATION_ANCESTRIES_COLUMNS)
+            self.full_summary_stats = DataFrame(columns=self.FULL_SUMMARY_STATS_COLUMNS)
+            self.bg_efo_traits = DataFrame(columns=self.BG_EFO_TRAITS_COLUMNS)
+            self.cohorts = DataFrame(columns=self.COHORTS_COLUMNS)
+            self.array_manufacturers = DataFrame(columns=self.ARRAY_MANUFACTURERS_COLUMNS)
+            return
+
+        study_rows = []
+        efo_traits_rows = []
+        genotyping_technologies_rows = []
+        discovery_ancestries_rows = []
+        replication_ancestries_rows = []
+        full_summary_stats_rows = []
+        bg_efo_traits_rows = []
+        cohorts_rows = []
+        array_manufacturers_rows = []
+
+        for record in standardized_data:
+            accession_id = record.get('accession_id', None)
+
+            # main table: fixed fields, missing fields filled with None
+            study_rows.append({
+                col: record.get(col, None) for col in self.STUDY_COLUMNS
+            })
+
+            # efo_traits
+            raw_efo_traits = record.get('efo_traits', None)
+            if raw_efo_traits is None:
+                iterable_efo_traits = []
+            elif isinstance(raw_efo_traits, list):
+                iterable_efo_traits = raw_efo_traits
+            else:
+                iterable_efo_traits = [raw_efo_traits]
+            for item in iterable_efo_traits:
+                if isinstance(item, dict):
+                    efo_traits_rows.append({
+                        'accession_id': accession_id,
+                        'efo_id': item.get('efo_id', None),
+                        'efo_trait': item.get('efo_trait', None)
+                    })
+                else:
+                    efo_traits_rows.append({
+                        'accession_id': accession_id,
+                        'efo_id': None,
+                        'efo_trait': item
+                    })
+
+            # genotyping_technologies
+            raw_genotyping_technologies = record.get('genotyping_technologies', None)
+            if raw_genotyping_technologies is None:
+                iterable_genotyping_technologies = []
+            elif isinstance(raw_genotyping_technologies, list):
+                iterable_genotyping_technologies = raw_genotyping_technologies
+            else:
+                iterable_genotyping_technologies = [raw_genotyping_technologies]
+            for item in iterable_genotyping_technologies:
+                genotyping_technologies_rows.append({
+                    'accession_id': accession_id,
+                    'genotyping_technologies': item
+                })
+
+            # discovery_ancestry
+            raw_discovery_ancestry = record.get('discovery_ancestry', None)
+            if raw_discovery_ancestry is None:
+                iterable_discovery_ancestry = []
+            elif isinstance(raw_discovery_ancestry, list):
+                iterable_discovery_ancestry = raw_discovery_ancestry
+            else:
+                iterable_discovery_ancestry = [raw_discovery_ancestry]
+            for item in iterable_discovery_ancestry:
+                discovery_ancestries_rows.append({
+                    'accession_id': accession_id,
+                    'discovery_ancestry': item
+                })
+
+            # replication_ancestry
+            raw_replication_ancestry = record.get('replication_ancestry', None)
+            if raw_replication_ancestry is None:
+                iterable_replication_ancestry = []
+            elif isinstance(raw_replication_ancestry, list):
+                iterable_replication_ancestry = raw_replication_ancestry
+            else:
+                iterable_replication_ancestry = [raw_replication_ancestry]
+            for item in iterable_replication_ancestry:
+                replication_ancestries_rows.append({
+                    'accession_id': accession_id,
+                    'replication_ancestry': item
+                })
+
+            # full_summary_stats
+            raw_full_summary_stats = record.get('full_summary_stats', None)
+            if raw_full_summary_stats is None:
+                iterable_full_summary_stats = []
+            elif isinstance(raw_full_summary_stats, list):
+                iterable_full_summary_stats = raw_full_summary_stats
+            else:
+                iterable_full_summary_stats = [raw_full_summary_stats]
+            for item in iterable_full_summary_stats:
+                full_summary_stats_rows.append({
+                    'accession_id': accession_id,
+                    'full_summary_stats': item
+                })
+
+            # bg_efo_traits
+            raw_bg_efo_traits = record.get('bg_efo_traits', None)
+            if raw_bg_efo_traits is None:
+                iterable_bg_efo_traits = []
+            elif isinstance(raw_bg_efo_traits, list):
+                iterable_bg_efo_traits = raw_bg_efo_traits
+            else:
+                iterable_bg_efo_traits = [raw_bg_efo_traits]
+            for item in iterable_bg_efo_traits:
+                if isinstance(item, dict):
+                    bg_efo_traits_rows.append({
+                        'accession_id': accession_id,
+                        'efo_id': item.get('efo_id', None),
+                        'efo_trait': item.get('efo_trait', None)
+                    })
+                else:
+                    bg_efo_traits_rows.append({
+                        'accession_id': accession_id,
+                        'efo_id': None,
+                        'efo_trait': item
+                    })
+
+            # cohort
+            raw_cohort = record.get('cohort', None)
+            if raw_cohort is None:
+                iterable_cohort = []
+            elif isinstance(raw_cohort, list):
+                iterable_cohort = raw_cohort
+            else:
+                iterable_cohort = [raw_cohort]
+            for item in iterable_cohort:
+                cohorts_rows.append({
+                    'accession_id': accession_id,
+                    'cohort': item
+                })
+
+            # array_manufacturer
+            raw_array_manufacturer = record.get('array_manufacturer', None)
+            if raw_array_manufacturer is None:
+                iterable_array_manufacturer = []
+            elif isinstance(raw_array_manufacturer, list):
+                iterable_array_manufacturer = raw_array_manufacturer
+            else:
+                iterable_array_manufacturer = [raw_array_manufacturer]
+            for item in iterable_array_manufacturer:
+                array_manufacturers_rows.append({
+                    'accession_id': accession_id,
+                    'array_manufacturer': item
+                })
+
+        self.studies = DataFrame(study_rows).reindex(columns=self.STUDY_COLUMNS) if len(study_rows) else DataFrame(columns=self.STUDY_COLUMNS)
+        self.efo_traits = DataFrame(efo_traits_rows).reindex(columns=self.EFO_TRAITS_COLUMNS) if len(efo_traits_rows) else DataFrame(columns=self.EFO_TRAITS_COLUMNS)
+        self.genotyping_technologies = DataFrame(genotyping_technologies_rows).reindex(columns=self.GENOTYPING_TECHNOLOGIES_COLUMNS) if len(genotyping_technologies_rows) else DataFrame(columns=self.GENOTYPING_TECHNOLOGIES_COLUMNS)
+        self.discovery_ancestries = DataFrame(discovery_ancestries_rows).reindex(columns=self.DISCOVERY_ANCESTRIES_COLUMNS) if len(discovery_ancestries_rows) else DataFrame(columns=self.DISCOVERY_ANCESTRIES_COLUMNS)
+        self.replication_ancestries = DataFrame(replication_ancestries_rows).reindex(columns=self.REPLICATION_ANCESTRIES_COLUMNS) if len(replication_ancestries_rows) else DataFrame(columns=self.REPLICATION_ANCESTRIES_COLUMNS)
+        self.full_summary_stats = DataFrame(full_summary_stats_rows).reindex(columns=self.FULL_SUMMARY_STATS_COLUMNS) if len(full_summary_stats_rows) else DataFrame(columns=self.FULL_SUMMARY_STATS_COLUMNS)
+        self.bg_efo_traits = DataFrame(bg_efo_traits_rows).reindex(columns=self.BG_EFO_TRAITS_COLUMNS) if len(bg_efo_traits_rows) else DataFrame(columns=self.BG_EFO_TRAITS_COLUMNS)
+        self.cohorts = DataFrame(cohorts_rows).reindex(columns=self.COHORTS_COLUMNS) if len(cohorts_rows) else DataFrame(columns=self.COHORTS_COLUMNS)
+        self.array_manufacturers = DataFrame(array_manufacturers_rows).reindex(columns=self.ARRAY_MANUFACTURERS_COLUMNS) if len(array_manufacturers_rows) else DataFrame(columns=self.ARRAY_MANUFACTURERS_COLUMNS)
+
+    def __str__(self):
+        if self.mode == 'Fat':
+            return (
+                    "Study is running in fat mode. It has 9 DataFrames with hierarchical dependencies.\n"
+                    "studies: %d rows\n"
+                    "|\n -efo_traits: %d rows\n"
+                    "|\n -genotyping_technologies: %d rows\n"
+                    "|\n -discovery_ancestries: %d rows\n"
+                    "|\n -replication_ancestries: %d rows\n"
+                    "|\n -full_summary_stats: %d rows\n"
+                    "|\n -bg_efo_traits: %d rows\n"
+                    "|\n -cohorts: %d rows\n"
+                    "|\n -array_manufacturers: %d rows"
+                    % (
+                        len(self.studies),
+                        len(self.efo_traits),
+                        len(self.genotyping_technologies),
+                        len(self.discovery_ancestries),
+                        len(self.replication_ancestries),
+                        len(self.full_summary_stats),
+                        len(self.bg_efo_traits),
+                        len(self.cohorts),
+                        len(self.array_manufacturers),
+                    )
+            )
+        if self.mode == 'Thin':
+            return (
+                    'Study is running in thin mode. It has 1 list that contains the raw data.\n'
+                    'raw_data: a list of size %d.'
+                    % len(self.raw_data)
+            )
+
+    def __repr__(self):
         return self.__str__()
 
-    def parse(self, data: list = None):
-        if data is None:
-            warnings.warn("Data is None, DataFrame will be empty")
-        self.raw_data = data
-        if data is None or len(data) == 0:
-            self.studies = DataFrame(
-                columns=['initialSampleSize', 'gxe', 'gxg', 'snpCount', 'qualifier', 'imputed', 'pooled',
-                         'studyDesignComment', 'accessionId', 'fullPvalueSet', 'userRequested', 'platforms',
-                         'ancestries', 'genotypingTechnologies', 'replicationSampleSize', 'diseaseTrait.trait',
-                         'publicationInfo.pubmedId', 'publicationInfo.publicationDate', 'publicationInfo.publication',
-                         'publicationInfo.title', 'publicationInfo.author.fullname', 'publicationInfo.author.orcid'])
-            self.genotyping_technologies = DataFrame(columns=['genotypingTechnology', 'accessionId'])
-            self.platforms = DataFrame(columns=['manufacturer', 'accessionId'])
-            self.ancestries = DataFrame(
-                columns=['type', 'numberOfIndividuals', 'ancestralGroups', 'countryOfOrigin', 'countryOfRecruitment',
-                         'accessionId', 'ancestryId'])
-            self.ancestral_groups = DataFrame(columns=['accessionId', 'ancestryId', 'ancestralGroup'])
-            self.country_of_origin = DataFrame(
-                columns=['accessionId', 'ancestryId', 'majorArea', 'region', 'countryName'])
-            self.country_of_recruitment = DataFrame(
-                columns=['accessionId', 'ancestryId', 'majorArea', 'region', 'countryName'])
-            return
-        self.studies: DataFrame = json_normalize(data, max_level=2)
-        self.genotyping_technologies: DataFrame = json_normalize(data, record_path=['genotypingTechnologies'],
-                                                                 meta=['accessionId'])
-        self.platforms: DataFrame = json_normalize(data, record_path=['platforms'], meta=['accessionId'])
-        ancestries = json_normalize(data, record_path=['ancestries'], meta=['accessionId'])
-        ancestries['ancestryId'] = Series(data=range(0, len(ancestries)))
-        self.ancestries: DataFrame = ancestries
-        ancestral_groups = ancestries[['ancestralGroups', 'accessionId', 'ancestryId']].copy()
-        ancestral_groups['ancestralGroups'] = ancestral_groups['ancestralGroups'].apply(
-            lambda x: x if len(x) > 0 else numpy.nan)
-        ancestral_groups = ancestral_groups.dropna()
-        ancestral_groups = ancestral_groups.explode('ancestralGroups')
-        ancestral_groups['ancestralGroup'] = ancestral_groups['ancestralGroups'].apply(
-            lambda x: x['ancestralGroup'])
-        ancestral_groups = ancestral_groups.drop(columns=['ancestralGroups'])
-        self.ancestral_groups: DataFrame = ancestral_groups.reset_index(drop=True)
-        country_of_origin = ancestries[['countryOfOrigin', 'accessionId', 'ancestryId']].copy()
-        country_of_origin['countryOfOrigin'] = country_of_origin['countryOfOrigin'].apply(
-            lambda x: x if len(x) > 0 else numpy.nan)
-        country_of_origin = country_of_origin.dropna()
-        country_of_origin = country_of_origin.explode('countryOfOrigin')
-        if len(country_of_origin)>0:
-            country_of_origin[['majorArea', 'region', 'countryName']] = country_of_origin['countryOfOrigin'].apply(
-                lambda x: Series(data=[x['majorArea'], x['region'], x['countryName']]))
-        else:
-            country_of_origin.assign(majorArea=[],region=[],countryName=[])
-        country_of_origin = country_of_origin.drop(columns=['countryOfOrigin'])
-        self.country_of_origin: DataFrame = country_of_origin.reset_index(drop=True)
-        country_of_recruitment = ancestries[['countryOfRecruitment', 'accessionId', 'ancestryId']].copy()
-        country_of_recruitment['countryOfRecruitment'] = country_of_recruitment['countryOfRecruitment'].apply(
-            lambda x: x if len(x) > 0 else numpy.nan)
-        country_of_recruitment = country_of_recruitment.dropna()
-        country_of_recruitment = country_of_recruitment.explode('countryOfRecruitment')
-        if len(country_of_recruitment)>0:
-            country_of_recruitment[['majorArea', 'region', 'countryName']] = country_of_recruitment[
-                'countryOfRecruitment'].apply(lambda x: Series([x['majorArea'], x['region'], x['countryName']]))
-        else:
-            country_of_recruitment.assign(majorArea=[],region=[],countryName=[])
-        country_of_recruitment = country_of_recruitment.drop(columns=['countryOfRecruitment'])
-        self.country_of_recruitment: DataFrame = country_of_recruitment.reset_index(drop=True)
-
-    def __len__(self):
-        return len(self.studies)
-
     def __getitem__(self, item):
-        if isinstance(item, str) or isinstance(item, int):
+        if isinstance(item, (str, int)):
             arr = [item]
-        elif isinstance(item, list) or isinstance(item, tuple) or isinstance(item, range):
+        elif isinstance(item, (list, tuple, range)):
             arr = item
         elif isinstance(item, slice):
             start, stop, step = item.indices(len(self))
             arr = list(range(start, stop, step))
         else:
             raise TypeError('Invalid argument type: {}'.format(type(item)))
+
         raw_data = self.raw_data
         raw_data_dict = {}
         for j in raw_data:
-            raw_data_dict[j['accessionId']]=j
+            raw_data_dict[j['accession_id']] = j
+
         sub_set = []
         for i in arr:
-            if isinstance(i, str) :
+            if isinstance(i, str):
                 sub_set.append(raw_data_dict[i])
             elif isinstance(i, int):
                 sub_set.append(raw_data[i])
             else:
                 raise TypeError('Invalid item type: {}'.format(type(i)))
-        return Study(sub_set)
+
+        return Study(sub_set, self.mode)
 
     def __add__(self, other):
-        return Study(self.raw_data + other.raw_data)
+        if self.mode == other.mode:
+            return Study(self.raw_data + other.raw_data, self.mode)
+        else:
+            raise Exception("Please input the same mode")
 
     def __sub__(self, other):
-        self_key_set = set()
-        self_dict = {}
-        other_key_set = set()
-        for i in self.raw_data:
-            self_key_set.add(i['accessionId'])
-            self_dict[i['accessionId']] = i
-        for j in other.raw_data:
-            other_key_set.add(j['accessionId'])
-        sub_key = self_key_set - other_key_set
-        data = []
-        for k in sub_key:
-            data.append(self_dict[k])
-        return Study(data)
+        if self.mode == other.mode:
+            self_key_set = set()
+            self_dict = {}
+            other_key_set = set()
+
+            for i in self.raw_data:
+                self_key_set.add(i['accession_id'])
+                self_dict[i['accession_id']] = i
+
+            for j in other.raw_data:
+                other_key_set.add(j['accession_id'])
+
+            sub_key = self_key_set - other_key_set
+            data = []
+            for k in sub_key:
+                data.append(self_dict[k])
+
+            return Study(data, self.mode)
+        else:
+            raise Exception("Please input the same mode")
 
     def __and__(self, other):
-        self_key_set = set()
-        self_dict = {}
-        other_key_set = set()
-        for i in self.raw_data:
-            self_key_set.add(i['accessionId'])
-            self_dict[i['accessionId']] = i
-        for j in other.raw_data:
-            other_key_set.add(j['accessionId'])
-        sub_key = self_key_set & other_key_set
-        data = []
-        for k in sub_key:
-            data.append(self_dict[k])
-        return Study(data)
+        if self.mode == other.mode:
+            self_key_set = set()
+            self_dict = {}
+            other_key_set = set()
+
+            for i in self.raw_data:
+                self_key_set.add(i['accession_id'])
+                self_dict[i['accession_id']] = i
+
+            for j in other.raw_data:
+                other_key_set.add(j['accession_id'])
+
+            sub_key = self_key_set & other_key_set
+            data = []
+            for k in sub_key:
+                data.append(self_dict[k])
+
+            return Study(data, self.mode)
+        else:
+            raise Exception("Please input the same mode")
 
     def __or__(self, other):
-        and_dict = {}
-        for i in self.raw_data:
-            and_dict[i['accessionId']] = i
-        for j in other.raw_data:
-            and_dict[j['accessionId']] = j
-        data = list(and_dict.values())
-        return Study(data)
+        if self.mode == other.mode:
+            and_dict = {}
+
+            for i in self.raw_data:
+                and_dict[i['accession_id']] = i
+
+            for j in other.raw_data:
+                and_dict[j['accession_id']] = j
+
+            data = list(and_dict.values())
+            return Study(data, self.mode)
+        else:
+            raise Exception("Please input the same mode")
 
     def __xor__(self, other):
-        self_key_set = set()
-        and_dict = {}
-        other_key_set = set()
-        for i in self.raw_data:
-            self_key_set.add(i['accessionId'])
-            and_dict[i['accessionId']] = i
-        for j in other.raw_data:
-            other_key_set.add(j['accessionId'])
-            and_dict[j['accessionId']] = j
-        sub_key = self_key_set ^ other_key_set
-        data = []
-        for k in sub_key:
-            data.append(and_dict[k])
-        return Study(data)
+        if self.mode == other.mode:
+            self_key_set = set()
+            and_dict = {}
+            other_key_set = set()
+
+            for i in self.raw_data:
+                self_key_set.add(i['accession_id'])
+                and_dict[i['accession_id']] = i
+
+            for j in other.raw_data:
+                other_key_set.add(j['accession_id'])
+                and_dict[j['accession_id']] = j
+
+            sub_key = self_key_set ^ other_key_set
+            data = []
+            for k in sub_key:
+                data.append(and_dict[k])
+
+            return Study(data, self.mode)
+        else:
+            raise Exception("Please input the same mode")
 
     def __eq__(self, other):
         if self is None or other is None:
             return self is None and other is None
-        return self.raw_data == other.raw_data
+        return self.raw_data == other.raw_data and self.mode == other.mode
+
+    def __len__(self):
+        return len(self.raw_data)
+
