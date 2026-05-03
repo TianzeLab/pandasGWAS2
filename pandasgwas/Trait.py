@@ -1,5 +1,5 @@
-from pandas import DataFrame, json_normalize, set_option
-import warnings
+from copy import deepcopy
+from pandas import DataFrame, set_option
 
 set_option('display.max_columns', None)
 set_option('display.width', 1000)
@@ -8,128 +8,210 @@ set_option('display.precision', 3)
 
 
 class Trait:
-    """
-    Python class to represent a set of GWAS Catalog EFO Trait. For more information, see "[GWAS CATALOG API Guide](https://www.ebi.ac.uk/gwas/rest/docs/api)"
+    TRAIT_COLUMNS = [
+        'efo_trait',
+        'uri',
+        'efo_id'
+    ]
 
-    ```Python
-    # get Tait by study_id
-    from pandasgwas.get_traits import get_traits
-    traits = get_traits(study_id='GCST000854')
-    ```
-
-    Attributes:
-        efo_traits: pandas.DataFrame. A DataFrame to represent all queried EFO Traits from GWAS Catalog REST API
-
-    """
-    def __init__(self, data: list = None):
+    def __init__(self, data: list = None, mode: str = "Fat"):
+        if mode not in ['Thin', 'Fat']:
+            raise Exception("Mode must be Fat or Thin")
         if data is None:
             data = []
-        self.parse(data)
+        else:
+            normalized_data = []
+            for item in data:
+                if not isinstance(item, dict):
+                    continue
+                rec = deepcopy(item)
+                if 'efo_id' in rec and rec['efo_id'] is not None:
+                    rec['efo_id'] = str(rec['efo_id'])
+                normalized_data.append(rec)
+            data = normalized_data
 
-    def __str__(self) -> str:
-        class_str='Trait has 1 DataFrames with hierarchical dependencies.\nefo_traits'
-        return class_str
+        self.mode = mode
 
-    def __repr__(self) -> str:
+        if mode == "Thin":
+            raw_data = []
+            for item in data:
+                if not isinstance(item, dict):
+                    continue
+                rec = deepcopy(item)
+                raw_data.append(rec)
+            self.raw_data = raw_data
+            return
+
+        standardized_data = []
+        for item in data:
+            if not isinstance(item, dict):
+                continue
+
+            rec = deepcopy(item)
+
+            normalized = {}
+            for key, value in rec.items():
+                normalized[key] = value
+
+            standardized = {}
+            for col in self.TRAIT_COLUMNS:
+                value = normalized.get(col, None)
+                standardized[col] = value
+
+            standardized_data.append(standardized)
+
+        self.raw_data = standardized_data
+
+        if len(standardized_data) == 0:
+            self.traits = DataFrame(columns=self.TRAIT_COLUMNS)
+            return
+
+        trait_rows = []
+
+        for record in standardized_data:
+            trait_rows.append({
+                col: record.get(col, None) for col in self.TRAIT_COLUMNS
+            })
+
+        self.traits = DataFrame(trait_rows).reindex(columns=self.TRAIT_COLUMNS) if len(trait_rows) else DataFrame(columns=self.TRAIT_COLUMNS)
+
+    def __str__(self):
+        if self.mode == 'Fat':
+            return (
+                    "Trait is running in fat mode. It has 1 DataFrame with hierarchical dependencies.\n"
+                    "traits: %d rows"
+                    % len(self.traits)
+            )
+        if self.mode == 'Thin':
+            return (
+                    'Trait is running in thin mode. It has 1 list that contains the raw data.\n'
+                    'raw_data: a list of size %d.'
+                    % len(self.raw_data)
+            )
+
+    def __repr__(self):
         return self.__str__()
-    
-
-    def __len__(self):
-        return len(self.efo_traits)
 
     def __getitem__(self, item):
-        if isinstance(item, str) or isinstance(item, int):
+        if isinstance(item, (str, int)):
             arr = [item]
-        elif isinstance(item, list) or isinstance(item, tuple) or isinstance(item, range):
+        elif isinstance(item, (list, tuple, range)):
             arr = item
         elif isinstance(item, slice):
             start, stop, step = item.indices(len(self))
             arr = list(range(start, stop, step))
         else:
             raise TypeError('Invalid argument type: {}'.format(type(item)))
+
         raw_data = self.raw_data
         raw_data_dict = {}
         for j in raw_data:
-            raw_data_dict[j['shortForm']]=j
+            raw_data_dict[j['efo_id']] = j
+
         sub_set = []
         for i in arr:
-            if isinstance(i, str) :
+            if isinstance(i, str):
                 sub_set.append(raw_data_dict[i])
             elif isinstance(i, int):
                 sub_set.append(raw_data[i])
             else:
                 raise TypeError('Invalid item type: {}'.format(type(i)))
-        return Trait(sub_set)
 
-    def parse(self, data: list = None):
-        if data is None:
-            warnings.warn("Data is None, DataFrame will be empty")
-        self.raw_data = data
-        if data is None or len(data) == 0:
-            self.efo_traits = DataFrame(columns=['trait', 'uri', 'shortForm'])
-            return
-        self.efo_traits: DataFrame = json_normalize(data, max_level=2)
+        return Trait(sub_set, self.mode)
 
     def __add__(self, other):
-        return Trait(self.raw_data + other.raw_data)
+        if self.mode == other.mode:
+            return Trait(self.raw_data + other.raw_data, self.mode)
+        else:
+            raise Exception("Please input the same mode")
 
     def __sub__(self, other):
-        self_key_set = set()
-        self_dict = {}
-        other_key_set = set()
-        for i in self.raw_data:
-            self_key_set.add(i['shortForm'])
-            self_dict[i['shortForm']] = i
-        for j in other.raw_data:
-            other_key_set.add(j['shortForm'])
-        sub_key = self_key_set - other_key_set
-        data = []
-        for k in sub_key:
-            data.append(self_dict[k])
-        return Trait(data)
+        if self.mode == other.mode:
+            self_key_set = set()
+            self_dict = {}
+            other_key_set = set()
+
+            for i in self.raw_data:
+                self_key_set.add(i['efo_id'])
+                self_dict[i['efo_id']] = i
+
+            for j in other.raw_data:
+                other_key_set.add(j['efo_id'])
+
+            sub_key = self_key_set - other_key_set
+            data = []
+            for k in sub_key:
+                data.append(self_dict[k])
+
+            return Trait(data, self.mode)
+        else:
+            raise Exception("Please input the same mode")
 
     def __and__(self, other):
-        self_key_set = set()
-        self_dict = {}
-        other_key_set = set()
-        for i in self.raw_data:
-            self_key_set.add(i['shortForm'])
-            self_dict[i['shortForm']] = i
-        for j in other.raw_data:
-            other_key_set.add(j['shortForm'])
-        sub_key = self_key_set & other_key_set
-        data = []
-        for k in sub_key:
-            data.append(self_dict[k])
-        return Trait(data)
+        if self.mode == other.mode:
+            self_key_set = set()
+            self_dict = {}
+            other_key_set = set()
+
+            for i in self.raw_data:
+                self_key_set.add(i['efo_id'])
+                self_dict[i['efo_id']] = i
+
+            for j in other.raw_data:
+                other_key_set.add(j['efo_id'])
+
+            sub_key = self_key_set & other_key_set
+            data = []
+            for k in sub_key:
+                data.append(self_dict[k])
+
+            return Trait(data, self.mode)
+        else:
+            raise Exception("Please input the same mode")
 
     def __or__(self, other):
-        and_dict = {}
-        for i in self.raw_data:
-            and_dict[i['shortForm']] = i
-        for j in other.raw_data:
-            and_dict[j['shortForm']] = j
-        data = list(and_dict.values())
-        return Trait(data)
+        if self.mode == other.mode:
+            and_dict = {}
+
+            for i in self.raw_data:
+                and_dict[i['efo_id']] = i
+
+            for j in other.raw_data:
+                and_dict[j['efo_id']] = j
+
+            data = list(and_dict.values())
+            return Trait(data, self.mode)
+        else:
+            raise Exception("Please input the same mode")
 
     def __xor__(self, other):
-        self_key_set = set()
-        and_dict = {}
-        other_key_set = set()
-        for i in self.raw_data:
-            self_key_set.add(i['shortForm'])
-            and_dict[i['shortForm']] = i
-        for j in other.raw_data:
-            other_key_set.add(j['shortForm'])
-            and_dict[j['shortForm']] = j
-        sub_key = self_key_set ^ other_key_set
-        data = []
-        for k in sub_key:
-            data.append(and_dict[k])
-        return Trait(data)
+        if self.mode == other.mode:
+            self_key_set = set()
+            and_dict = {}
+            other_key_set = set()
 
+            for i in self.raw_data:
+                self_key_set.add(i['efo_id'])
+                and_dict[i['efo_id']] = i
+
+            for j in other.raw_data:
+                other_key_set.add(j['efo_id'])
+                and_dict[j['efo_id']] = j
+
+            sub_key = self_key_set ^ other_key_set
+            data = []
+            for k in sub_key:
+                data.append(and_dict[k])
+
+            return Trait(data, self.mode)
+        else:
+            raise Exception("Please input the same mode")
 
     def __eq__(self, other):
         if self is None or other is None:
             return self is None and other is None
-        return self.raw_data == other.raw_data
+        return self.raw_data == other.raw_data and self.mode == other.mode
+
+    def __len__(self):
+        return len(self.raw_data)
+

@@ -1,57 +1,45 @@
-from pandasgwas.get_traits import *
-
-
-def test_get_traits_by_study_id():
-    df = get_traits_by_study_id('GCST000854')
-    assert df.efo_traits.size == 3 * 2
-
-
-def test_get_traits_by_association_id():
-    df = get_traits_by_association_id('16603')
-    assert df.efo_traits.size == 3 * 2
-
-
-def test_get_traits_by_efo_id():
-    df = get_traits_by_efo_id('EFO_0001065')
-    assert df.efo_traits.size == 3 * 1
-
-
-def test_get_traits_by_pubmed_id():
-    df = get_traits_by_pubmed_id('21041247')
-    assert df.efo_traits.size == 3 * 2
-
-
-def test_get_traits_by_efo_uri():
-    df = get_traits_by_efo_uri('http://www.ebi.ac.uk/efo/EFO_0005133')
-    assert df.efo_traits.size == 3 * 1
-
-
-def test_get_traits_by_efo_trait():
-    df = get_traits_by_efo_trait('MHPG measurement')
-    assert df.efo_traits.size == 3 * 1
-
-
-def test_get_traits_all():
-    df = get_traits_all(interactive=False)
-    assert df.efo_traits.size == 3 * 5753
+from pandasgwas.get_traits import get_traits
 
 
 def test_get_traits():
-    df = get_traits(study_id='GCST000854', association_id='16603')
-    assert df.efo_traits.size == 3 * 4
-    df = get_traits(efo_id='EFO_0001065', pubmed_id='21041247',set_operation='bind')
-    assert df.efo_traits.size == 3 * 3
-    df = get_traits(efo_uri='http://www.ebi.ac.uk/efo/EFO_0005133', efo_trait='MHPG measurement')
-    assert df.efo_traits.size == 3 * 2
+    trait_a = get_traits(efo_id='EFO_0009713', mode='Thin')
+    trait_a = get_traits(efo_id='EFO_0009713')
 
-    df = get_traits(study_id='GCST000854', association_id='16603', set_operation='intersection')
-    assert df.efo_traits.size == 3 * 2
-    df = get_traits(efo_id='EFO_0001065', pubmed_id='21041247', set_operation='intersection')
-    assert df.efo_traits.size == 0
-    df = get_traits(efo_id='EFO_0001065')
-    assert df.efo_traits.size == 3 * 1
-    df = get_traits(pubmed_id='21041247', set_operation='intersection')
-    assert df.efo_traits.size == 3 * 2
-    df = get_traits(efo_uri='http://www.ebi.ac.uk/efo/EFO_0005133', efo_trait='MHPG measurement',
-                    set_operation='intersection')
-    assert df.efo_traits.size == 3 * 1
+    assert len(trait_a) == 1
+    assert trait_a.traits.shape[0] == 1
+    assert trait_a.traits.iloc[0]['efo_id'] == 'EFO_0009713'
+
+    trait_b = get_traits(pubmed_id='35241825')
+    assert len(trait_b) >= 1
+
+    trait_c = get_traits(efo_trait='celiac disease')
+    assert len(trait_c) >= 1
+
+    trait_d = get_traits(uri='http://www.ebi.ac.uk/efo/EFO_0009713')
+    assert len(trait_d) >= 1
+
+    trait_e = get_traits(mapped_gene='CCR6')
+    assert len(trait_e) >= 1
+
+    trait_f = get_traits(mapped_gene='CCR6', extended_geneset=True)
+    assert len(trait_f) >= 1
+
+    trait_a = get_traits(efo_id='EFO_0009713')
+    trait_b = get_traits(pubmed_id='35241825')
+
+    assert trait_a[0] == trait_a
+    assert trait_a['EFO_0009713'] == trait_a
+
+    assert len(trait_e[0:2]) == 2
+    assert len(trait_e[range(2)]) == 2
+    assert trait_e[0] == trait_e[trait_e.raw_data[0]['efo_id']]
+
+    assert len(trait_a + trait_b[0]) >= 1
+    assert len(trait_b - trait_b[0]) == len(trait_b) - 1
+    assert len(trait_b & trait_b[0]) == 1
+    assert len(trait_b | trait_b[0]) == len(trait_b)
+    assert len(trait_b ^ trait_b[0]) == len(trait_b) - 1
+
+    trait_c = get_traits(efo_id='EFO_0009713')
+    assert trait_c == trait_a
+
