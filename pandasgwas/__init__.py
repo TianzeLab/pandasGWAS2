@@ -4,14 +4,11 @@ from pandasgwas.Browser import open_in_pubmed, open_in_dbsnp, open_in_gtex, open
     open_publication_in_gwas_catalog
 from pandasgwas.Study import Study
 from pandasgwas.Trait import Trait
-from pandasgwas.Variant import Variant
+from pandasgwas.Snp import Snp
 from pandasgwas.get_associations import get_associations
 from pandasgwas.get_studies import get_studies
+from pandasgwas.get_snps import get_snps
 from pandasgwas.get_traits import get_traits
-from pandasgwas.get_variants import get_variants_by_study_id, get_variants_by_association_id, \
-    get_variants_by_variant_id, get_variants_by_efo_id, get_variants_by_pubmed_id, get_variants_by_genomic_range, \
-    get_variants_by_cytogenetic_band, get_variants_by_gene_name, get_variants_by_efo_trait, \
-    get_variants_by_reported_trait, get_variants_all, get_variants
 from pandasgwas.set_operation import bind, intersect, set_diff, set_xor, union, set_equal
 from pandasgwas.utility import get_child_efo, is_API_available, clear_cache
 import pandasgwas.summary_statistics
