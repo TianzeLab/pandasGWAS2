@@ -6,6 +6,8 @@ from pandasgwas.get_publications import get_publications
 from pandasgwas.Publication import Publication
 from pandasgwas.Study import Study
 from pandasgwas.Trait import Trait
+from pandasgwas.Gene import Gene
+from pandasgwas.get_genes import get_genes
 from pandasgwas.Snp import Snp
 from pandasgwas.get_associations import get_associations
 from pandasgwas.get_studies import get_studies
