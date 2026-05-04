@@ -2,6 +2,8 @@ from pandasgwas.Association import Association
 from pandasgwas.Browser import open_in_pubmed, open_in_dbsnp, open_in_gtex, open_study_in_gwas_catalog, \
     open_variant_in_gwas_catalog, open_trait_in_gwas_catalog, open_gene_in_gwas_catalog, open_region_in_gwas_catalog, \
     open_publication_in_gwas_catalog
+from pandasgwas.get_publications import get_publications
+from pandasgwas.Publication import Publication
 from pandasgwas.Study import Study
 from pandasgwas.Trait import Trait
 from pandasgwas.Snp import Snp
