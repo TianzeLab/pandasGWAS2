@@ -2,6 +2,7 @@ import requests
 import json
 import progressbar
 from typing import List, Dict
+import re
 from requests.adapters import HTTPAdapter
 from cachetools import TTLCache
 
@@ -108,26 +109,62 @@ def clear_cache(field: str = 'All') -> None:
 
 
 def get_data(url: str, cache_impl=None, cached=True, type=None) -> List[Dict]:
+    if cache_impl is None:
+        cache_impl = {}
+
+    def _clean_item(item: dict, type: str) -> dict:
+        href = item.get("_links", {}).get("self", {}).get("href")
+
+        if type == "ancestries" and href:
+            match = re.search(r"/studies/([^/]+)/ancestries/([^/?#]+)", href)
+            if match:
+                item["accession_id"] = match.group(1)
+                item["ancestry_id"] = match.group(2)
+
+        elif type == "genomic_contexts" and href:
+            match = re.search(
+                r"/single-nucleotide-polymorphisms/([^/]+)/genomic-contexts/([^/?#]+)",
+                href
+            )
+            if match:
+                item["rs_id"] = match.group(1)
+                item["genomicContext_id"] = match.group(2)
+
+        elif type == "loci" and href:
+            match = re.search(r"/associations/([^/]+)/loci/([^/?#]+)", href)
+            if match:
+                item["association_id"] = match.group(1)
+                item["locus_id"] = match.group(2)
+
+        item.pop("links", None)
+        item.pop("_links", None)
+
+        return item
+
     with requests.Session() as s:
         s.mount('https://', HTTPAdapter(max_retries=5))
         if url in cache_impl and cached:
             r = cache_impl[url]
         else:
             r = s.get(url)
+
         if r.status_code == 200:
-            if len(json.loads(r.text)) == 0:
+            parsed_data = json.loads(r.text)
+            if len(parsed_data) == 0:
                 return []
             cache_impl[url] = r
-            parsed_data = json.loads(r.text)
+
             if parsed_data.get('_embedded') is not None:
-                results_list = parsed_data.get('_embedded').get(type)
-                if parsed_data.get('_links') is not None:
-                    bar = progressbar.ProgressBar(max_value=parsed_data.get('page').get('totalElements')).start()
-                    progress = len(parsed_data.get('_embedded').get(type))
+                results_list = parsed_data.get('_embedded').get(type, [])
+                if parsed_data.get('_links') is not None and parsed_data.get('page') is not None:
+                    bar = progressbar.ProgressBar(
+                        max_value=parsed_data.get('page').get('totalElements')
+                    ).start()
+                    progress = len(results_list)
                     bar.update(progress)
-                    next = parsed_data.get('_links').get('next')
-                    while next is not None:
-                        next_url = next.get('href')
+                    next_link = parsed_data.get('_links').get('next')
+                    while next_link is not None:
+                        next_url = next_link.get('href')
                         if (next_url in cache_impl) and cached:
                             r = cache_impl[next_url]
                         else:
@@ -137,31 +174,34 @@ def get_data(url: str, cache_impl=None, cached=True, type=None) -> List[Dict]:
                             elif r.status_code == 404:
                                 return []
                             else:
-                                raise Exception('The request for %s failed: response code was %d, content was \n%s' % (
-                                    next_url, r.status_code, r.text))
+                                raise Exception(
+                                    'The request for %s failed: response code was %d, content was \n%s'
+                                    % (next_url, r.status_code, r.text)
+                                )
                         parsed_data = json.loads(r.text)
-                        results_list.extend(parsed_data.get('_embedded').get(type))
-                        progress = progress + len(parsed_data.get('_embedded').get(type))
+                        current_items = parsed_data.get('_embedded', {}).get(type, [])
+                        results_list.extend(current_items)
+                        progress += len(current_items)
                         bar.update(progress)
-                        next = parsed_data.get('_links').get('next')
+                        next_link = parsed_data.get('_links', {}).get('next')
                     bar.finish()
-                    for item in results_list:
-                        if isinstance(item, dict):
-                            item.pop('links', None)
-                            item.pop('_links', None)
-                    return results_list
+                for item in results_list:
+                    if isinstance(item, dict):
+                        _clean_item(item, type)
+                return results_list
             else:
                 if parsed_data.get('page') is not None:
                     return []
-                parsed_data.pop('links', None)
+                _clean_item(parsed_data, type)
                 parsed_data.pop('_links', None)
                 return [parsed_data]
         elif r.status_code == 404:
             return []
         else:
             raise Exception(
-                'The request for %s failed: response code was %d, content was \n%s' % (url, r.status_code, r.text))
-
+                'The request for %s failed: response code was %d, content was \n%s'
+                % (url, r.status_code, r.text)
+            )
 
 def ask_yes_no_question(question: str) -> str:
     yes_no_answer = ""
