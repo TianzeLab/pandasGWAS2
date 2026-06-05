@@ -7,27 +7,29 @@ set_option('display.colheader_justify', 'center')
 set_option('display.precision', 3)
 
 
+_SNP_COLUMNS = [
+    'rs_id',
+    'merged',
+    'functional_class',
+    'current_snp',
+    'last_update_date',
+    'maf',
+    'minor_allele',
+    'alleles',
+    'most_severe_consequence'
+]
+
+_LOCATIONS_COLUMNS = ['rs_id', 'chromosome_name', 'chromosome_position']
+_REGIONS_COLUMNS = ['rs_id', 'region']
+_MAPPED_GENES_COLUMNS = ['rs_id', 'mapped_genes']
+
+_NESTED_FIELDS = [
+    'locations',
+    'mapped_genes'
+]
+
+
 class Snp:
-    SNP_COLUMNS = [
-        'rs_id',
-        'merged',
-        'functional_class',
-        'current_snp',
-        'last_update_date',
-        'maf',
-        'minor_allele',
-        'alleles',
-        'most_severe_consequence'
-    ]
-
-    LOCATIONS_COLUMNS = ['rs_id', 'chromosome_name', 'chromosome_position']
-    REGIONS_COLUMNS = ['rs_id', 'region']
-    MAPPED_GENES_COLUMNS = ['rs_id', 'mapped_genes']
-
-    NESTED_FIELDS = [
-        'locations',
-        'mapped_genes'
-    ]
 
     def __init__(self, data: list = None, mode: str = "Fat"):
         if mode not in ['Thin', 'Fat']:
@@ -69,11 +71,11 @@ class Snp:
                 normalized[key] = value
 
             standardized = {}
-            for col in self.SNP_COLUMNS:
+            for col in _SNP_COLUMNS:
                 value = normalized.get(col, None)
                 standardized[col] = value
 
-            for field in self.NESTED_FIELDS:
+            for field in _NESTED_FIELDS:
                 standardized[field] = normalized.get(field, None)
 
             standardized_data.append(standardized)
@@ -81,10 +83,10 @@ class Snp:
         self.raw_data = standardized_data
 
         if len(standardized_data) == 0:
-            self.snps = DataFrame(columns=self.SNP_COLUMNS)
-            self.locations = DataFrame(columns=self.LOCATIONS_COLUMNS)
-            self.regions = DataFrame(columns=self.REGIONS_COLUMNS)
-            self.mapped_genes = DataFrame(columns=self.MAPPED_GENES_COLUMNS)
+            self.snps = DataFrame(columns=_SNP_COLUMNS)
+            self.locations = DataFrame(columns=_LOCATIONS_COLUMNS)
+            self.regions = DataFrame(columns=_REGIONS_COLUMNS)
+            self.mapped_genes = DataFrame(columns=_MAPPED_GENES_COLUMNS)
             return
 
         snp_rows = []
@@ -97,7 +99,7 @@ class Snp:
 
             # main table: fixed fields, missing fields filled with None
             snp_rows.append({
-                col: record.get(col, None) for col in self.SNP_COLUMNS
+                col: record.get(col, None) for col in _SNP_COLUMNS
             })
 
             # locations
@@ -148,10 +150,10 @@ class Snp:
                     'mapped_genes': item
                 })
 
-        self.snps = DataFrame(snp_rows).reindex(columns=self.SNP_COLUMNS) if len(snp_rows) else DataFrame(columns=self.SNP_COLUMNS)
-        self.locations = DataFrame(locations_rows).reindex(columns=self.LOCATIONS_COLUMNS) if len(locations_rows) else DataFrame(columns=self.LOCATIONS_COLUMNS)
-        self.regions = DataFrame(regions_rows).reindex(columns=self.REGIONS_COLUMNS) if len(regions_rows) else DataFrame(columns=self.REGIONS_COLUMNS)
-        self.mapped_genes = DataFrame(mapped_genes_rows).reindex(columns=self.MAPPED_GENES_COLUMNS) if len(mapped_genes_rows) else DataFrame(columns=self.MAPPED_GENES_COLUMNS)
+        self.snps = DataFrame(snp_rows).reindex(columns=_SNP_COLUMNS) if len(snp_rows) else DataFrame(columns=_SNP_COLUMNS)
+        self.locations = DataFrame(locations_rows).reindex(columns=_LOCATIONS_COLUMNS) if len(locations_rows) else DataFrame(columns=_LOCATIONS_COLUMNS)
+        self.regions = DataFrame(regions_rows).reindex(columns=_REGIONS_COLUMNS) if len(regions_rows) else DataFrame(columns=_REGIONS_COLUMNS)
+        self.mapped_genes = DataFrame(mapped_genes_rows).reindex(columns=_MAPPED_GENES_COLUMNS) if len(mapped_genes_rows) else DataFrame(columns=_MAPPED_GENES_COLUMNS)
 
     def __str__(self):
         if self.mode == 'Fat':

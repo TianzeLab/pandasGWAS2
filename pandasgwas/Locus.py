@@ -7,43 +7,45 @@ set_option('display.colheader_justify', 'center')
 set_option('display.precision', 3)
 
 
+_LOCUS_COLUMNS = [
+    'association_id',
+    'locus_id',
+    'haplotype_snp_count',
+    'description'
+]
+
+_STRONGEST_RISK_ALLELES_COLUMNS = [
+    'association_id',
+    'locus_id',
+    'risk_allele_name',
+    'risk_frequency',
+    'genome_wide',
+    'limited_list',
+    'source',
+    'mapping_method',
+    'is_closest_gene'
+]
+_AUTHOR_REPORTED_GENES_COLUMNS = [
+    'association_id',
+    'locus_id',
+    'gene_name',
+    'gene_description',
+    'location',
+    'cytogenic_region',
+    'biotype'
+]
+_ENSEMBL_GENE_IDS_COLUMNS = ['association_id', 'locus_id', 'gene_name', 'ensembl_gene_ids']
+_ENTREZ_GENE_IDS_COLUMNS = ['association_id', 'locus_id', 'gene_name', 'entrez_gene_ids']
+
+_NESTED_FIELDS = [
+    'strongest_risk_alleles',
+    'author_reported_genes',
+    'ensembl_gene_ids',
+    'entrez_gene_ids'
+]
+
+
 class Locus:
-    LOCUS_COLUMNS = [
-        'association_id',
-        'locus_id',
-        'haplotype_snp_count',
-        'description'
-    ]
-
-    STRONGEST_RISK_ALLELES_COLUMNS = [
-        'association_id',
-        'locus_id',
-        'risk_allele_name',
-        'risk_frequency',
-        'genome_wide',
-        'limited_list',
-        'source',
-        'mapping_method',
-        'is_closest_gene'
-    ]
-    AUTHOR_REPORTED_GENES_COLUMNS = [
-        'association_id',
-        'locus_id',
-        'gene_name',
-        'gene_description',
-        'location',
-        'cytogenic_region',
-        'biotype'
-    ]
-    ENSEMBL_GENE_IDS_COLUMNS = ['association_id', 'locus_id', 'gene_name', 'ensembl_gene_ids']
-    ENTREZ_GENE_IDS_COLUMNS = ['association_id', 'locus_id', 'gene_name', 'entrez_gene_ids']
-
-    NESTED_FIELDS = [
-        'strongest_risk_alleles',
-        'author_reported_genes',
-        'ensembl_gene_ids',
-        'entrez_gene_ids'
-    ]
 
     def _normalize_record(self, record):
         normalized = deepcopy(record)
@@ -110,11 +112,11 @@ class Locus:
                 normalized[key] = value
 
             standardized = {}
-            for col in self.LOCUS_COLUMNS:
+            for col in _LOCUS_COLUMNS:
                 value = normalized.get(col, None)
                 standardized[col] = value
 
-            for field in self.NESTED_FIELDS:
+            for field in _NESTED_FIELDS:
                 standardized[field] = normalized.get(field, None)
 
             standardized_data.append(standardized)
@@ -122,11 +124,11 @@ class Locus:
         self.raw_data = standardized_data
 
         if len(standardized_data) == 0:
-            self.loci = DataFrame(columns=self.LOCUS_COLUMNS)
-            self.strongest_risk_alleles = DataFrame(columns=self.STRONGEST_RISK_ALLELES_COLUMNS)
-            self.author_reported_genes = DataFrame(columns=self.AUTHOR_REPORTED_GENES_COLUMNS)
-            self.ensembl_gene_ids = DataFrame(columns=self.ENSEMBL_GENE_IDS_COLUMNS)
-            self.entrez_gene_ids = DataFrame(columns=self.ENTREZ_GENE_IDS_COLUMNS)
+            self.loci = DataFrame(columns=_LOCUS_COLUMNS)
+            self.strongest_risk_alleles = DataFrame(columns=_STRONGEST_RISK_ALLELES_COLUMNS)
+            self.author_reported_genes = DataFrame(columns=_AUTHOR_REPORTED_GENES_COLUMNS)
+            self.ensembl_gene_ids = DataFrame(columns=_ENSEMBL_GENE_IDS_COLUMNS)
+            self.entrez_gene_ids = DataFrame(columns=_ENTREZ_GENE_IDS_COLUMNS)
             return
 
         locus_rows = []
@@ -140,7 +142,7 @@ class Locus:
             locus_id = record.get('locus_id', None)
 
             locus_rows.append({
-                col: record.get(col, None) for col in self.LOCUS_COLUMNS
+                col: record.get(col, None) for col in _LOCUS_COLUMNS
             })
 
             raw_strongest_risk_alleles = record.get('strongest_risk_alleles', None)
@@ -328,11 +330,11 @@ class Locus:
                         'entrez_gene_ids': item
                     })
 
-        self.loci = DataFrame(locus_rows).reindex(columns=self.LOCUS_COLUMNS) if len(locus_rows) else DataFrame(columns=self.LOCUS_COLUMNS)
-        self.strongest_risk_alleles = DataFrame(strongest_risk_alleles_rows).reindex(columns=self.STRONGEST_RISK_ALLELES_COLUMNS) if len(strongest_risk_alleles_rows) else DataFrame(columns=self.STRONGEST_RISK_ALLELES_COLUMNS)
-        self.author_reported_genes = DataFrame(author_reported_genes_rows).reindex(columns=self.AUTHOR_REPORTED_GENES_COLUMNS) if len(author_reported_genes_rows) else DataFrame(columns=self.AUTHOR_REPORTED_GENES_COLUMNS)
-        self.ensembl_gene_ids = DataFrame(ensembl_gene_ids_rows).reindex(columns=self.ENSEMBL_GENE_IDS_COLUMNS) if len(ensembl_gene_ids_rows) else DataFrame(columns=self.ENSEMBL_GENE_IDS_COLUMNS)
-        self.entrez_gene_ids = DataFrame(entrez_gene_ids_rows).reindex(columns=self.ENTREZ_GENE_IDS_COLUMNS) if len(entrez_gene_ids_rows) else DataFrame(columns=self.ENTREZ_GENE_IDS_COLUMNS)
+        self.loci = DataFrame(locus_rows).reindex(columns=_LOCUS_COLUMNS) if len(locus_rows) else DataFrame(columns=_LOCUS_COLUMNS)
+        self.strongest_risk_alleles = DataFrame(strongest_risk_alleles_rows).reindex(columns=_STRONGEST_RISK_ALLELES_COLUMNS) if len(strongest_risk_alleles_rows) else DataFrame(columns=_STRONGEST_RISK_ALLELES_COLUMNS)
+        self.author_reported_genes = DataFrame(author_reported_genes_rows).reindex(columns=_AUTHOR_REPORTED_GENES_COLUMNS) if len(author_reported_genes_rows) else DataFrame(columns=_AUTHOR_REPORTED_GENES_COLUMNS)
+        self.ensembl_gene_ids = DataFrame(ensembl_gene_ids_rows).reindex(columns=_ENSEMBL_GENE_IDS_COLUMNS) if len(ensembl_gene_ids_rows) else DataFrame(columns=_ENSEMBL_GENE_IDS_COLUMNS)
+        self.entrez_gene_ids = DataFrame(entrez_gene_ids_rows).reindex(columns=_ENTREZ_GENE_IDS_COLUMNS) if len(entrez_gene_ids_rows) else DataFrame(columns=_ENTREZ_GENE_IDS_COLUMNS)
 
     def __str__(self):
         if self.mode == 'Fat':
@@ -487,4 +489,3 @@ class Locus:
 
     def __len__(self):
         return len(self.raw_data)
-

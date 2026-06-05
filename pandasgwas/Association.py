@@ -7,51 +7,53 @@ set_option('display.colheader_justify', 'center')
 set_option('display.precision', 3)
 
 
+_ASSOCIATION_COLUMNS = [
+    'association_id',
+    'risk_frequency',
+    'pvalue_description',
+    'pvalue_mantissa',
+    'pvalue_exponent',
+    'multi_snp_haplotype',
+    'snp_interaction',
+    'snp_type',
+    'range',
+    'description',
+    'or_per_copy_num',
+    'or_value',
+    'beta_num',
+    'beta_unit',
+    'beta_direction',
+    'beta',
+    'last_mapping_date',
+    'last_update_date',
+    'p_value',
+    'pubmed_id',
+    'first_author',
+    'ci_lower',
+    'ci_upper'
+]
+
+_EFO_TRAITS_COLUMNS = ['association_id', 'efo_id', 'efo_trait']
+_SNP_ALLELE_COLUMNS = ['association_id', 'rs_id', 'effect_allele']
+_BG_EFO_TRAITS_COLUMNS = ['association_id', 'efo_id', 'efo_trait']
+_REPORTED_TRAITS_COLUMNS = ['association_id', 'reported_trait']
+_LOCATIONS_COLUMNS = ['association_id', 'locations']
+_MAPPED_GENES_COLUMNS = ['association_id', 'mapped_genes']
+_SNP_EFFECT_ALLELES_COLUMNS = ['association_id', 'snp_effect_allele']
+
+
+_NESTED_FIELDS = [
+    'efo_traits',
+    'snp_alleles',
+    'bg_efo_traits',
+    'reported_traits',
+    'locations',
+    'mapped_genes',
+    'snp_effect_alleles'
+]
+
+
 class Association:
-    ASSOCIATION_COLUMNS = [
-        'association_id',
-        'risk_frequency',
-        'pvalue_description',
-        'pvalue_mantissa',
-        'pvalue_exponent',
-        'multi_snp_haplotype',
-        'snp_interaction',
-        'snp_type',
-        'range',
-        'description',
-        'or_per_copy_num',
-        'or_value',
-        'beta_num',
-        'beta_unit',
-        'beta_direction',
-        'beta',
-        'last_mapping_date',
-        'last_update_date',
-        'p_value',
-        'pubmed_id',
-        'first_author',
-        'ci_lower',
-        'ci_upper'
-    ]
-
-    EFO_TRAITS_COLUMNS = ['association_id', 'efo_id', 'efo_trait']
-    SNP_ALLELE_COLUMNS = ['association_id', 'rs_id', 'effect_allele']
-    BG_EFO_TRAITS_COLUMNS = ['association_id', 'efo_id', 'efo_trait']
-    REPORTED_TRAITS_COLUMNS = ['association_id', 'reported_trait']
-    LOCATIONS_COLUMNS = ['association_id', 'locations']
-    MAPPED_GENES_COLUMNS = ['association_id', 'mapped_genes']
-    SNP_EFFECT_ALLELES_COLUMNS = ['association_id', 'snp_effect_allele']
-
-
-    NESTED_FIELDS = [
-        'efo_traits',
-        'snp_alleles',
-        'bg_efo_traits',
-        'reported_traits',
-        'locations',
-        'mapped_genes',
-        'snp_effect_alleles'
-    ]
 
     def __init__(self, data: list = None, mode: str = "Fat"):
         if mode not in ['Thin', 'Fat']:
@@ -94,7 +96,7 @@ class Association:
                 normalized[key] = value
 
             standardized = {}
-            for col in self.ASSOCIATION_COLUMNS:
+            for col in _ASSOCIATION_COLUMNS:
                 value = normalized.get(col, None)
                 if col == 'range':
                     if value is None:
@@ -110,7 +112,7 @@ class Association:
                         value = str(value)
                 standardized[col] = value
 
-            for field in self.NESTED_FIELDS:
+            for field in _NESTED_FIELDS:
                 standardized[field] = normalized.get(field, None)
 
             standardized_data.append(standardized)
@@ -118,14 +120,14 @@ class Association:
         self.raw_data = standardized_data
 
         if len(standardized_data) == 0:
-            self.associations = DataFrame(columns=self.ASSOCIATION_COLUMNS)
-            self.efo_traits = DataFrame(columns=self.EFO_TRAITS_COLUMNS)
-            self.snp_allele = DataFrame(columns=self.SNP_ALLELE_COLUMNS)
-            self.bg_efo_traits = DataFrame(columns=self.BG_EFO_TRAITS_COLUMNS)
-            self.reported_traits = DataFrame(columns=self.REPORTED_TRAITS_COLUMNS)
-            self.locations = DataFrame(columns=self.LOCATIONS_COLUMNS)
-            self.mapped_genes = DataFrame(columns=self.MAPPED_GENES_COLUMNS)
-            self.snp_effect_alleles = DataFrame(columns=self.SNP_EFFECT_ALLELES_COLUMNS)
+            self.associations = DataFrame(columns=_ASSOCIATION_COLUMNS)
+            self.efo_traits = DataFrame(columns=_EFO_TRAITS_COLUMNS)
+            self.snp_allele = DataFrame(columns=_SNP_ALLELE_COLUMNS)
+            self.bg_efo_traits = DataFrame(columns=_BG_EFO_TRAITS_COLUMNS)
+            self.reported_traits = DataFrame(columns=_REPORTED_TRAITS_COLUMNS)
+            self.locations = DataFrame(columns=_LOCATIONS_COLUMNS)
+            self.mapped_genes = DataFrame(columns=_MAPPED_GENES_COLUMNS)
+            self.snp_effect_alleles = DataFrame(columns=_SNP_EFFECT_ALLELES_COLUMNS)
             return
 
         association_rows = []
@@ -142,7 +144,7 @@ class Association:
 
             # 主表：固定字段，缺失补 None
             association_rows.append({
-                col: record.get(col, None) for col in self.ASSOCIATION_COLUMNS
+                col: record.get(col, None) for col in _ASSOCIATION_COLUMNS
             })
 
             # efo_traits
@@ -267,14 +269,14 @@ class Association:
                     'snp_effect_allele': item
                 })
 
-        self.associations = DataFrame(association_rows).reindex(columns=self.ASSOCIATION_COLUMNS) if len(association_rows) else DataFrame(columns=self.ASSOCIATION_COLUMNS)
-        self.efo_traits = DataFrame(efo_traits_rows).reindex(columns=self.EFO_TRAITS_COLUMNS) if len(efo_traits_rows) else DataFrame(columns=self.EFO_TRAITS_COLUMNS)
-        self.snp_allele = DataFrame(snp_allele_rows).reindex(columns=self.SNP_ALLELE_COLUMNS) if len(snp_allele_rows) else DataFrame(columns=self.SNP_ALLELE_COLUMNS)
-        self.bg_efo_traits = DataFrame(bg_efo_traits_rows).reindex(columns=self.BG_EFO_TRAITS_COLUMNS) if len(bg_efo_traits_rows) else DataFrame(columns=self.BG_EFO_TRAITS_COLUMNS)
-        self.reported_traits = DataFrame(reported_traits_rows).reindex(columns=self.REPORTED_TRAITS_COLUMNS) if len(reported_traits_rows) else DataFrame(columns=self.REPORTED_TRAITS_COLUMNS)
-        self.locations = DataFrame(locations_rows).reindex(columns=self.LOCATIONS_COLUMNS) if len(locations_rows) else DataFrame(columns=self.LOCATIONS_COLUMNS)
-        self.mapped_genes = DataFrame(mapped_genes_rows).reindex(columns=self.MAPPED_GENES_COLUMNS) if len(mapped_genes_rows) else DataFrame(columns=self.MAPPED_GENES_COLUMNS)
-        self.snp_effect_alleles = DataFrame(snp_effect_alleles_rows).reindex(columns=self.SNP_EFFECT_ALLELES_COLUMNS) if len(snp_effect_alleles_rows) else DataFrame(columns=self.SNP_EFFECT_ALLELES_COLUMNS)
+        self.associations = DataFrame(association_rows).reindex(columns=_ASSOCIATION_COLUMNS) if len(association_rows) else DataFrame(columns=_ASSOCIATION_COLUMNS)
+        self.efo_traits = DataFrame(efo_traits_rows).reindex(columns=_EFO_TRAITS_COLUMNS) if len(efo_traits_rows) else DataFrame(columns=_EFO_TRAITS_COLUMNS)
+        self.snp_allele = DataFrame(snp_allele_rows).reindex(columns=_SNP_ALLELE_COLUMNS) if len(snp_allele_rows) else DataFrame(columns=_SNP_ALLELE_COLUMNS)
+        self.bg_efo_traits = DataFrame(bg_efo_traits_rows).reindex(columns=_BG_EFO_TRAITS_COLUMNS) if len(bg_efo_traits_rows) else DataFrame(columns=_BG_EFO_TRAITS_COLUMNS)
+        self.reported_traits = DataFrame(reported_traits_rows).reindex(columns=_REPORTED_TRAITS_COLUMNS) if len(reported_traits_rows) else DataFrame(columns=_REPORTED_TRAITS_COLUMNS)
+        self.locations = DataFrame(locations_rows).reindex(columns=_LOCATIONS_COLUMNS) if len(locations_rows) else DataFrame(columns=_LOCATIONS_COLUMNS)
+        self.mapped_genes = DataFrame(mapped_genes_rows).reindex(columns=_MAPPED_GENES_COLUMNS) if len(mapped_genes_rows) else DataFrame(columns=_MAPPED_GENES_COLUMNS)
+        self.snp_effect_alleles = DataFrame(snp_effect_alleles_rows).reindex(columns=_SNP_EFFECT_ALLELES_COLUMNS) if len(snp_effect_alleles_rows) else DataFrame(columns=_SNP_EFFECT_ALLELES_COLUMNS)
 
     def __str__(self):
         if self.mode == 'Fat':

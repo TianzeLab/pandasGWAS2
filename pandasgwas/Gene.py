@@ -7,22 +7,24 @@ set_option('display.colheader_justify', 'center')
 set_option('display.precision', 3)
 
 
+_GENE_COLUMNS = [
+    'gene_name',
+    'gene_description',
+    'location',
+    'cytogenic_region',
+    'biotype'
+]
+
+_ENSEMBL_GENE_IDS_COLUMNS = ['gene_name', 'ensembl_gene_ids']
+_ENTREZ_GENE_IDS_COLUMNS = ['gene_name', 'entrez_gene_ids']
+
+_NESTED_FIELDS = [
+    'ensembl_gene_ids',
+    'entrez_gene_ids'
+]
+
+
 class Gene:
-    GENE_COLUMNS = [
-        'gene_name',
-        'gene_description',
-        'location',
-        'cytogenic_region',
-        'biotype'
-    ]
-
-    ENSEMBL_GENE_IDS_COLUMNS = ['gene_name', 'ensembl_gene_ids']
-    ENTREZ_GENE_IDS_COLUMNS = ['gene_name', 'entrez_gene_ids']
-
-    NESTED_FIELDS = [
-        'ensembl_gene_ids',
-        'entrez_gene_ids'
-    ]
 
     def __init__(self, data: list = None, mode: str = "Fat"):
         if mode not in ['Thin', 'Fat']:
@@ -64,11 +66,11 @@ class Gene:
                 normalized[key] = value
 
             standardized = {}
-            for col in self.GENE_COLUMNS:
+            for col in _GENE_COLUMNS:
                 value = normalized.get(col, None)
                 standardized[col] = value
 
-            for field in self.NESTED_FIELDS:
+            for field in _NESTED_FIELDS:
                 standardized[field] = normalized.get(field, None)
 
             standardized_data.append(standardized)
@@ -76,9 +78,9 @@ class Gene:
         self.raw_data = standardized_data
 
         if len(standardized_data) == 0:
-            self.genes = DataFrame(columns=self.GENE_COLUMNS)
-            self.ensembl_gene_ids = DataFrame(columns=self.ENSEMBL_GENE_IDS_COLUMNS)
-            self.entrez_gene_ids = DataFrame(columns=self.ENTREZ_GENE_IDS_COLUMNS)
+            self.genes = DataFrame(columns=_GENE_COLUMNS)
+            self.ensembl_gene_ids = DataFrame(columns=_ENSEMBL_GENE_IDS_COLUMNS)
+            self.entrez_gene_ids = DataFrame(columns=_ENTREZ_GENE_IDS_COLUMNS)
             return
 
         gene_rows = []
@@ -89,7 +91,7 @@ class Gene:
             gene_name = record.get('gene_name', None)
 
             gene_rows.append({
-                col: record.get(col, None) for col in self.GENE_COLUMNS
+                col: record.get(col, None) for col in _GENE_COLUMNS
             })
 
             raw_ensembl_gene_ids = record.get('ensembl_gene_ids', None)
@@ -118,9 +120,9 @@ class Gene:
                     'entrez_gene_ids': item
                 })
 
-        self.genes = DataFrame(gene_rows).reindex(columns=self.GENE_COLUMNS) if len(gene_rows) else DataFrame(columns=self.GENE_COLUMNS)
-        self.ensembl_gene_ids = DataFrame(ensembl_gene_ids_rows).reindex(columns=self.ENSEMBL_GENE_IDS_COLUMNS) if len(ensembl_gene_ids_rows) else DataFrame(columns=self.ENSEMBL_GENE_IDS_COLUMNS)
-        self.entrez_gene_ids = DataFrame(entrez_gene_ids_rows).reindex(columns=self.ENTREZ_GENE_IDS_COLUMNS) if len(entrez_gene_ids_rows) else DataFrame(columns=self.ENTREZ_GENE_IDS_COLUMNS)
+        self.genes = DataFrame(gene_rows).reindex(columns=_GENE_COLUMNS) if len(gene_rows) else DataFrame(columns=_GENE_COLUMNS)
+        self.ensembl_gene_ids = DataFrame(ensembl_gene_ids_rows).reindex(columns=_ENSEMBL_GENE_IDS_COLUMNS) if len(ensembl_gene_ids_rows) else DataFrame(columns=_ENSEMBL_GENE_IDS_COLUMNS)
+        self.entrez_gene_ids = DataFrame(entrez_gene_ids_rows).reindex(columns=_ENTREZ_GENE_IDS_COLUMNS) if len(entrez_gene_ids_rows) else DataFrame(columns=_ENTREZ_GENE_IDS_COLUMNS)
 
     def __str__(self):
         if self.mode == 'Fat':

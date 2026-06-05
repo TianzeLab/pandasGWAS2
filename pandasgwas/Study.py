@@ -7,46 +7,48 @@ set_option('display.colheader_justify', 'center')
 set_option('display.precision', 3)
 
 
+_STUDY_COLUMNS = [
+    'initial_sample_size',
+    'replication_sample_size',
+    'study_id',
+    'gxe',
+    'gxg',
+    'snp_count',
+    'qualifier',
+    'imputed',
+    'pooled',
+    'accession_id',
+    'user_requested',
+    'pubmed_id',
+    'platforms',
+    'disease_trait',
+    'terms_of_license',
+    'full_summary_stats_available'
+]
+
+_EFO_TRAITS_COLUMNS = ['accession_id', 'efo_id', 'efo_trait']
+_GENOTYPING_TECHNOLOGIES_COLUMNS = ['accession_id', 'genotyping_technologies']
+_DISCOVERY_ANCESTRIES_COLUMNS = ['accession_id', 'discovery_ancestry']
+_REPLICATION_ANCESTRIES_COLUMNS = ['accession_id', 'replication_ancestry']
+_FULL_SUMMARY_STATS_COLUMNS = ['accession_id', 'full_summary_stats']
+_BG_EFO_TRAITS_COLUMNS = ['accession_id', 'efo_id', 'efo_trait']
+_COHORTS_COLUMNS = ['accession_id', 'cohort']
+_ARRAY_MANUFACTURERS_COLUMNS = ['accession_id', 'array_manufacturer']
+
+
+_NESTED_FIELDS = [
+    'efo_traits',
+    'genotyping_technologies',
+    'discovery_ancestry',
+    'replication_ancestry',
+    'full_summary_stats',
+    'bg_efo_traits',
+    'cohort',
+    'array_manufacturer'
+]
+
+
 class Study:
-    STUDY_COLUMNS = [
-        'initial_sample_size',
-        'replication_sample_size',
-        'study_id',
-        'gxe',
-        'gxg',
-        'snp_count',
-        'qualifier',
-        'imputed',
-        'pooled',
-        'accession_id',
-        'user_requested',
-        'pubmed_id',
-        'platforms',
-        'disease_trait',
-        'terms_of_license',
-        'full_summary_stats_available'
-    ]
-
-    EFO_TRAITS_COLUMNS = ['accession_id', 'efo_id', 'efo_trait']
-    GENOTYPING_TECHNOLOGIES_COLUMNS = ['accession_id', 'genotyping_technologies']
-    DISCOVERY_ANCESTRIES_COLUMNS = ['accession_id', 'discovery_ancestry']
-    REPLICATION_ANCESTRIES_COLUMNS = ['accession_id', 'replication_ancestry']
-    FULL_SUMMARY_STATS_COLUMNS = ['accession_id', 'full_summary_stats']
-    BG_EFO_TRAITS_COLUMNS = ['accession_id', 'efo_id', 'efo_trait']
-    COHORTS_COLUMNS = ['accession_id', 'cohort']
-    ARRAY_MANUFACTURERS_COLUMNS = ['accession_id', 'array_manufacturer']
-
-
-    NESTED_FIELDS = [
-        'efo_traits',
-        'genotyping_technologies',
-        'discovery_ancestry',
-        'replication_ancestry',
-        'full_summary_stats',
-        'bg_efo_traits',
-        'cohort',
-        'array_manufacturer'
-    ]
 
     def __init__(self, data: list = None, mode: str = "Fat"):
         if mode not in ['Thin', 'Fat']:
@@ -88,11 +90,11 @@ class Study:
                 normalized[key] = value
 
             standardized = {}
-            for col in self.STUDY_COLUMNS:
+            for col in _STUDY_COLUMNS:
                 value = normalized.get(col, None)
                 standardized[col] = value
 
-            for field in self.NESTED_FIELDS:
+            for field in _NESTED_FIELDS:
                 standardized[field] = normalized.get(field, None)
 
             standardized_data.append(standardized)
@@ -100,15 +102,15 @@ class Study:
         self.raw_data = standardized_data
 
         if len(standardized_data) == 0:
-            self.studies = DataFrame(columns=self.STUDY_COLUMNS)
-            self.efo_traits = DataFrame(columns=self.EFO_TRAITS_COLUMNS)
-            self.genotyping_technologies = DataFrame(columns=self.GENOTYPING_TECHNOLOGIES_COLUMNS)
-            self.discovery_ancestries = DataFrame(columns=self.DISCOVERY_ANCESTRIES_COLUMNS)
-            self.replication_ancestries = DataFrame(columns=self.REPLICATION_ANCESTRIES_COLUMNS)
-            self.full_summary_stats = DataFrame(columns=self.FULL_SUMMARY_STATS_COLUMNS)
-            self.bg_efo_traits = DataFrame(columns=self.BG_EFO_TRAITS_COLUMNS)
-            self.cohorts = DataFrame(columns=self.COHORTS_COLUMNS)
-            self.array_manufacturers = DataFrame(columns=self.ARRAY_MANUFACTURERS_COLUMNS)
+            self.studies = DataFrame(columns=_STUDY_COLUMNS)
+            self.efo_traits = DataFrame(columns=_EFO_TRAITS_COLUMNS)
+            self.genotyping_technologies = DataFrame(columns=_GENOTYPING_TECHNOLOGIES_COLUMNS)
+            self.discovery_ancestries = DataFrame(columns=_DISCOVERY_ANCESTRIES_COLUMNS)
+            self.replication_ancestries = DataFrame(columns=_REPLICATION_ANCESTRIES_COLUMNS)
+            self.full_summary_stats = DataFrame(columns=_FULL_SUMMARY_STATS_COLUMNS)
+            self.bg_efo_traits = DataFrame(columns=_BG_EFO_TRAITS_COLUMNS)
+            self.cohorts = DataFrame(columns=_COHORTS_COLUMNS)
+            self.array_manufacturers = DataFrame(columns=_ARRAY_MANUFACTURERS_COLUMNS)
             return
 
         study_rows = []
@@ -126,7 +128,7 @@ class Study:
 
             # main table: fixed fields, missing fields filled with None
             study_rows.append({
-                col: record.get(col, None) for col in self.STUDY_COLUMNS
+                col: record.get(col, None) for col in _STUDY_COLUMNS
             })
 
             # efo_traits
@@ -257,15 +259,15 @@ class Study:
                     'array_manufacturer': item
                 })
 
-        self.studies = DataFrame(study_rows).reindex(columns=self.STUDY_COLUMNS) if len(study_rows) else DataFrame(columns=self.STUDY_COLUMNS)
-        self.efo_traits = DataFrame(efo_traits_rows).reindex(columns=self.EFO_TRAITS_COLUMNS) if len(efo_traits_rows) else DataFrame(columns=self.EFO_TRAITS_COLUMNS)
-        self.genotyping_technologies = DataFrame(genotyping_technologies_rows).reindex(columns=self.GENOTYPING_TECHNOLOGIES_COLUMNS) if len(genotyping_technologies_rows) else DataFrame(columns=self.GENOTYPING_TECHNOLOGIES_COLUMNS)
-        self.discovery_ancestries = DataFrame(discovery_ancestries_rows).reindex(columns=self.DISCOVERY_ANCESTRIES_COLUMNS) if len(discovery_ancestries_rows) else DataFrame(columns=self.DISCOVERY_ANCESTRIES_COLUMNS)
-        self.replication_ancestries = DataFrame(replication_ancestries_rows).reindex(columns=self.REPLICATION_ANCESTRIES_COLUMNS) if len(replication_ancestries_rows) else DataFrame(columns=self.REPLICATION_ANCESTRIES_COLUMNS)
-        self.full_summary_stats = DataFrame(full_summary_stats_rows).reindex(columns=self.FULL_SUMMARY_STATS_COLUMNS) if len(full_summary_stats_rows) else DataFrame(columns=self.FULL_SUMMARY_STATS_COLUMNS)
-        self.bg_efo_traits = DataFrame(bg_efo_traits_rows).reindex(columns=self.BG_EFO_TRAITS_COLUMNS) if len(bg_efo_traits_rows) else DataFrame(columns=self.BG_EFO_TRAITS_COLUMNS)
-        self.cohorts = DataFrame(cohorts_rows).reindex(columns=self.COHORTS_COLUMNS) if len(cohorts_rows) else DataFrame(columns=self.COHORTS_COLUMNS)
-        self.array_manufacturers = DataFrame(array_manufacturers_rows).reindex(columns=self.ARRAY_MANUFACTURERS_COLUMNS) if len(array_manufacturers_rows) else DataFrame(columns=self.ARRAY_MANUFACTURERS_COLUMNS)
+        self.studies = DataFrame(study_rows).reindex(columns=_STUDY_COLUMNS) if len(study_rows) else DataFrame(columns=_STUDY_COLUMNS)
+        self.efo_traits = DataFrame(efo_traits_rows).reindex(columns=_EFO_TRAITS_COLUMNS) if len(efo_traits_rows) else DataFrame(columns=_EFO_TRAITS_COLUMNS)
+        self.genotyping_technologies = DataFrame(genotyping_technologies_rows).reindex(columns=_GENOTYPING_TECHNOLOGIES_COLUMNS) if len(genotyping_technologies_rows) else DataFrame(columns=_GENOTYPING_TECHNOLOGIES_COLUMNS)
+        self.discovery_ancestries = DataFrame(discovery_ancestries_rows).reindex(columns=_DISCOVERY_ANCESTRIES_COLUMNS) if len(discovery_ancestries_rows) else DataFrame(columns=_DISCOVERY_ANCESTRIES_COLUMNS)
+        self.replication_ancestries = DataFrame(replication_ancestries_rows).reindex(columns=_REPLICATION_ANCESTRIES_COLUMNS) if len(replication_ancestries_rows) else DataFrame(columns=_REPLICATION_ANCESTRIES_COLUMNS)
+        self.full_summary_stats = DataFrame(full_summary_stats_rows).reindex(columns=_FULL_SUMMARY_STATS_COLUMNS) if len(full_summary_stats_rows) else DataFrame(columns=_FULL_SUMMARY_STATS_COLUMNS)
+        self.bg_efo_traits = DataFrame(bg_efo_traits_rows).reindex(columns=_BG_EFO_TRAITS_COLUMNS) if len(bg_efo_traits_rows) else DataFrame(columns=_BG_EFO_TRAITS_COLUMNS)
+        self.cohorts = DataFrame(cohorts_rows).reindex(columns=_COHORTS_COLUMNS) if len(cohorts_rows) else DataFrame(columns=_COHORTS_COLUMNS)
+        self.array_manufacturers = DataFrame(array_manufacturers_rows).reindex(columns=_ARRAY_MANUFACTURERS_COLUMNS) if len(array_manufacturers_rows) else DataFrame(columns=_ARRAY_MANUFACTURERS_COLUMNS)
 
     def __str__(self):
         if self.mode == 'Fat':
@@ -424,4 +426,6 @@ class Study:
 
     def __len__(self):
         return len(self.raw_data)
+
+
 

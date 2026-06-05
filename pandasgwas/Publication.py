@@ -7,40 +7,42 @@ set_option('display.colheader_justify', 'center')
 set_option('display.precision', 3)
 
 
+_PUBLICATION_COLUMNS = [
+    'pubmed_id',
+    'publication_date',
+    'journal',
+    'title'
+]
+
+_AUTHORS_COLUMNS = [
+    'pubmed_id',
+    'full_name',
+    'full_name_standard',
+    'first_name',
+    'last_name',
+    'initials',
+    'affiliation',
+    'orcid'
+]
+
+_FIRST_AUTHORS_COLUMNS = [
+    'pubmed_id',
+    'full_name',
+    'full_name_standard',
+    'first_name',
+    'last_name',
+    'initials',
+    'affiliation',
+    'orcid'
+]
+
+_NESTED_FIELDS = [
+    'authors',
+    'first_author'
+]
+
+
 class Publication:
-    PUBLICATION_COLUMNS = [
-        'pubmed_id',
-        'publication_date',
-        'journal',
-        'title'
-    ]
-
-    AUTHORS_COLUMNS = [
-        'pubmed_id',
-        'full_name',
-        'full_name_standard',
-        'first_name',
-        'last_name',
-        'initials',
-        'affiliation',
-        'orcid'
-    ]
-
-    FIRST_AUTHORS_COLUMNS = [
-        'pubmed_id',
-        'full_name',
-        'full_name_standard',
-        'first_name',
-        'last_name',
-        'initials',
-        'affiliation',
-        'orcid'
-    ]
-
-    NESTED_FIELDS = [
-        'authors',
-        'first_author'
-    ]
 
     def __init__(self, data: list = None, mode: str = "Fat"):
         if mode not in ['Thin', 'Fat']:
@@ -82,11 +84,11 @@ class Publication:
                 normalized[key] = value
 
             standardized = {}
-            for col in self.PUBLICATION_COLUMNS:
+            for col in _PUBLICATION_COLUMNS:
                 value = normalized.get(col, None)
                 standardized[col] = value
 
-            for field in self.NESTED_FIELDS:
+            for field in _NESTED_FIELDS:
                 standardized[field] = normalized.get(field, None)
 
             standardized_data.append(standardized)
@@ -94,9 +96,9 @@ class Publication:
         self.raw_data = standardized_data
 
         if len(standardized_data) == 0:
-            self.publications = DataFrame(columns=self.PUBLICATION_COLUMNS)
-            self.authors = DataFrame(columns=self.AUTHORS_COLUMNS)
-            self.first_authors = DataFrame(columns=self.FIRST_AUTHORS_COLUMNS)
+            self.publications = DataFrame(columns=_PUBLICATION_COLUMNS)
+            self.authors = DataFrame(columns=_AUTHORS_COLUMNS)
+            self.first_authors = DataFrame(columns=_FIRST_AUTHORS_COLUMNS)
             return
 
         publication_rows = []
@@ -107,7 +109,7 @@ class Publication:
             pubmed_id = record.get('pubmed_id', None)
 
             publication_rows.append({
-                col: record.get(col, None) for col in self.PUBLICATION_COLUMNS
+                col: record.get(col, None) for col in _PUBLICATION_COLUMNS
             })
 
             raw_authors = record.get('authors', None)
@@ -172,9 +174,9 @@ class Publication:
                         'orcid': None
                     })
 
-        self.publications = DataFrame(publication_rows).reindex(columns=self.PUBLICATION_COLUMNS) if len(publication_rows) else DataFrame(columns=self.PUBLICATION_COLUMNS)
-        self.authors = DataFrame(authors_rows).reindex(columns=self.AUTHORS_COLUMNS) if len(authors_rows) else DataFrame(columns=self.AUTHORS_COLUMNS)
-        self.first_authors = DataFrame(first_authors_rows).reindex(columns=self.FIRST_AUTHORS_COLUMNS) if len(first_authors_rows) else DataFrame(columns=self.FIRST_AUTHORS_COLUMNS)
+        self.publications = DataFrame(publication_rows).reindex(columns=_PUBLICATION_COLUMNS) if len(publication_rows) else DataFrame(columns=_PUBLICATION_COLUMNS)
+        self.authors = DataFrame(authors_rows).reindex(columns=_AUTHORS_COLUMNS) if len(authors_rows) else DataFrame(columns=_AUTHORS_COLUMNS)
+        self.first_authors = DataFrame(first_authors_rows).reindex(columns=_FIRST_AUTHORS_COLUMNS) if len(first_authors_rows) else DataFrame(columns=_FIRST_AUTHORS_COLUMNS)
 
     def __str__(self):
         if self.mode == 'Fat':

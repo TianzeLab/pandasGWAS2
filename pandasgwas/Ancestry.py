@@ -7,23 +7,25 @@ set_option('display.colheader_justify', 'center')
 set_option('display.precision', 3)
 
 
+_ANCESTRY_COLUMNS = [
+    'accession_id',
+    'ancestry_id',
+    'type',
+    'number_of_individuals'
+]
+
+_ANCESTRAL_GROUPS_COLUMNS = ['accession_id', 'ancestry_id', 'ancestral_group']
+_COUNTRY_OF_ORIGINS_COLUMNS = ['accession_id', 'ancestry_id', 'major_area', 'region', 'country_name']
+_COUNTRY_OF_RECRUITMENTS_COLUMNS = ['accession_id', 'ancestry_id', 'major_area', 'region', 'country_name']
+
+_NESTED_FIELDS = [
+    'ancestral_groups',
+    'country_of_origins',
+    'country_of_recruitments'
+]
+
+
 class Ancestry:
-    ANCESTRY_COLUMNS = [
-        'accession_id',
-        'ancestry_id',
-        'type',
-        'number_of_individuals'
-    ]
-
-    ANCESTRAL_GROUPS_COLUMNS = ['accession_id', 'ancestry_id', 'ancestral_group']
-    COUNTRY_OF_ORIGINS_COLUMNS = ['accession_id', 'ancestry_id', 'major_area', 'region', 'country_name']
-    COUNTRY_OF_RECRUITMENTS_COLUMNS = ['accession_id', 'ancestry_id', 'major_area', 'region', 'country_name']
-
-    NESTED_FIELDS = [
-        'ancestral_groups',
-        'country_of_origins',
-        'country_of_recruitments'
-    ]
 
     def __init__(self, data: list = None, mode: str = "Fat"):
         if mode not in ['Thin', 'Fat']:
@@ -67,11 +69,11 @@ class Ancestry:
                 normalized[key] = value
 
             standardized = {}
-            for col in self.ANCESTRY_COLUMNS:
+            for col in _ANCESTRY_COLUMNS:
                 value = normalized.get(col, None)
                 standardized[col] = value
 
-            for field in self.NESTED_FIELDS:
+            for field in _NESTED_FIELDS:
                 standardized[field] = normalized.get(field, None)
 
             standardized_data.append(standardized)
@@ -79,10 +81,10 @@ class Ancestry:
         self.raw_data = standardized_data
 
         if len(standardized_data) == 0:
-            self.ancestries = DataFrame(columns=self.ANCESTRY_COLUMNS)
-            self.ancestral_groups = DataFrame(columns=self.ANCESTRAL_GROUPS_COLUMNS)
-            self.country_of_origins = DataFrame(columns=self.COUNTRY_OF_ORIGINS_COLUMNS)
-            self.country_of_recruitments = DataFrame(columns=self.COUNTRY_OF_RECRUITMENTS_COLUMNS)
+            self.ancestries = DataFrame(columns=_ANCESTRY_COLUMNS)
+            self.ancestral_groups = DataFrame(columns=_ANCESTRAL_GROUPS_COLUMNS)
+            self.country_of_origins = DataFrame(columns=_COUNTRY_OF_ORIGINS_COLUMNS)
+            self.country_of_recruitments = DataFrame(columns=_COUNTRY_OF_RECRUITMENTS_COLUMNS)
             return
 
         ancestry_rows = []
@@ -96,7 +98,7 @@ class Ancestry:
 
             # main table: fixed fields, missing fields filled with None
             ancestry_rows.append({
-                col: record.get(col, None) for col in self.ANCESTRY_COLUMNS
+                col: record.get(col, None) for col in _ANCESTRY_COLUMNS
             })
 
             # ancestral_groups
@@ -173,10 +175,10 @@ class Ancestry:
                         'country_name': item
                     })
 
-        self.ancestries = DataFrame(ancestry_rows).reindex(columns=self.ANCESTRY_COLUMNS) if len(ancestry_rows) else DataFrame(columns=self.ANCESTRY_COLUMNS)
-        self.ancestral_groups = DataFrame(ancestral_groups_rows).reindex(columns=self.ANCESTRAL_GROUPS_COLUMNS) if len(ancestral_groups_rows) else DataFrame(columns=self.ANCESTRAL_GROUPS_COLUMNS)
-        self.country_of_origins = DataFrame(country_of_origins_rows).reindex(columns=self.COUNTRY_OF_ORIGINS_COLUMNS) if len(country_of_origins_rows) else DataFrame(columns=self.COUNTRY_OF_ORIGINS_COLUMNS)
-        self.country_of_recruitments = DataFrame(country_of_recruitments_rows).reindex(columns=self.COUNTRY_OF_RECRUITMENTS_COLUMNS) if len(country_of_recruitments_rows) else DataFrame(columns=self.COUNTRY_OF_RECRUITMENTS_COLUMNS)
+        self.ancestries = DataFrame(ancestry_rows).reindex(columns=_ANCESTRY_COLUMNS) if len(ancestry_rows) else DataFrame(columns=_ANCESTRY_COLUMNS)
+        self.ancestral_groups = DataFrame(ancestral_groups_rows).reindex(columns=_ANCESTRAL_GROUPS_COLUMNS) if len(ancestral_groups_rows) else DataFrame(columns=_ANCESTRAL_GROUPS_COLUMNS)
+        self.country_of_origins = DataFrame(country_of_origins_rows).reindex(columns=_COUNTRY_OF_ORIGINS_COLUMNS) if len(country_of_origins_rows) else DataFrame(columns=_COUNTRY_OF_ORIGINS_COLUMNS)
+        self.country_of_recruitments = DataFrame(country_of_recruitments_rows).reindex(columns=_COUNTRY_OF_RECRUITMENTS_COLUMNS) if len(country_of_recruitments_rows) else DataFrame(columns=_COUNTRY_OF_RECRUITMENTS_COLUMNS)
 
     def __str__(self):
         if self.mode == 'Fat':

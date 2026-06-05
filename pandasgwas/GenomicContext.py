@@ -7,40 +7,42 @@ set_option('display.colheader_justify', 'center')
 set_option('display.precision', 3)
 
 
+_GENOMIC_CONTEXT_COLUMNS = [
+    'rs_id',
+    'genomicContext_id',
+    'is_intergenic',
+    'is_upstream',
+    'is_downstream',
+    'distance',
+    'source',
+    'mapping_method',
+    'is_closest_gene'
+]
+
+_GENES_COLUMNS = [
+    'rs_id',
+    'genomicContext_id',
+    'gene_name',
+    'gene_description',
+    'location',
+    'cytogenic_region',
+    'biotype'
+]
+_LOCATIONS_COLUMNS = ['rs_id', 'genomicContext_id', 'chromosome_name', 'chromosome_position']
+_ENSEMBL_GENE_IDS_COLUMNS = ['rs_id', 'genomicContext_id', 'gene_name', 'ensembl_gene_ids']
+_ENTREZ_GENE_IDS_COLUMNS = ['rs_id', 'genomicContext_id', 'gene_name', 'entrez_gene_ids']
+_REGIONS_COLUMNS = ['rs_id', 'genomicContext_id', 'chromosome_name', 'region']
+
+_NESTED_FIELDS = [
+    'genes',
+    'locations',
+    'ensembl_gene_ids',
+    'entrez_gene_ids',
+    'regions'
+]
+
+
 class GenomicContext:
-    GENOMIC_CONTEXT_COLUMNS = [
-        'rs_id',
-        'genomicContext_id',
-        'is_intergenic',
-        'is_upstream',
-        'is_downstream',
-        'distance',
-        'source',
-        'mapping_method',
-        'is_closest_gene'
-    ]
-
-    GENES_COLUMNS = [
-        'rs_id',
-        'genomicContext_id',
-        'gene_name',
-        'gene_description',
-        'location',
-        'cytogenic_region',
-        'biotype'
-    ]
-    LOCATIONS_COLUMNS = ['rs_id', 'genomicContext_id', 'chromosome_name', 'chromosome_position']
-    ENSEMBL_GENE_IDS_COLUMNS = ['rs_id', 'genomicContext_id', 'gene_name', 'ensembl_gene_ids']
-    ENTREZ_GENE_IDS_COLUMNS = ['rs_id', 'genomicContext_id', 'gene_name', 'entrez_gene_ids']
-    REGIONS_COLUMNS = ['rs_id', 'genomicContext_id', 'chromosome_name', 'region']
-
-    NESTED_FIELDS = [
-        'genes',
-        'locations',
-        'ensembl_gene_ids',
-        'entrez_gene_ids',
-        'regions'
-    ]
 
     def _normalize_record(self, record):
         normalized = deepcopy(record)
@@ -112,11 +114,11 @@ class GenomicContext:
                 normalized[key] = value
 
             standardized = {}
-            for col in self.GENOMIC_CONTEXT_COLUMNS:
+            for col in _GENOMIC_CONTEXT_COLUMNS:
                 value = normalized.get(col, None)
                 standardized[col] = value
 
-            for field in self.NESTED_FIELDS:
+            for field in _NESTED_FIELDS:
                 standardized[field] = normalized.get(field, None)
 
             standardized_data.append(standardized)
@@ -124,12 +126,12 @@ class GenomicContext:
         self.raw_data = standardized_data
 
         if len(standardized_data) == 0:
-            self.genomic_contexts = DataFrame(columns=self.GENOMIC_CONTEXT_COLUMNS)
-            self.genes = DataFrame(columns=self.GENES_COLUMNS)
-            self.locations = DataFrame(columns=self.LOCATIONS_COLUMNS)
-            self.ensembl_gene_ids = DataFrame(columns=self.ENSEMBL_GENE_IDS_COLUMNS)
-            self.entrez_gene_ids = DataFrame(columns=self.ENTREZ_GENE_IDS_COLUMNS)
-            self.regions = DataFrame(columns=self.REGIONS_COLUMNS)
+            self.genomic_contexts = DataFrame(columns=_GENOMIC_CONTEXT_COLUMNS)
+            self.genes = DataFrame(columns=_GENES_COLUMNS)
+            self.locations = DataFrame(columns=_LOCATIONS_COLUMNS)
+            self.ensembl_gene_ids = DataFrame(columns=_ENSEMBL_GENE_IDS_COLUMNS)
+            self.entrez_gene_ids = DataFrame(columns=_ENTREZ_GENE_IDS_COLUMNS)
+            self.regions = DataFrame(columns=_REGIONS_COLUMNS)
             return
 
         genomic_context_rows = []
@@ -144,7 +146,7 @@ class GenomicContext:
             genomicContext_id = record.get('genomicContext_id', None)
 
             genomic_context_rows.append({
-                col: record.get(col, None) for col in self.GENOMIC_CONTEXT_COLUMNS
+                col: record.get(col, None) for col in _GENOMIC_CONTEXT_COLUMNS
             })
 
             raw_genes = record.get('genes', None)
@@ -365,12 +367,12 @@ class GenomicContext:
                         'region': item
                     })
 
-        self.genomic_contexts = DataFrame(genomic_context_rows).reindex(columns=self.GENOMIC_CONTEXT_COLUMNS) if len(genomic_context_rows) else DataFrame(columns=self.GENOMIC_CONTEXT_COLUMNS)
-        self.genes = DataFrame(genes_rows).reindex(columns=self.GENES_COLUMNS) if len(genes_rows) else DataFrame(columns=self.GENES_COLUMNS)
-        self.locations = DataFrame(locations_rows).reindex(columns=self.LOCATIONS_COLUMNS) if len(locations_rows) else DataFrame(columns=self.LOCATIONS_COLUMNS)
-        self.ensembl_gene_ids = DataFrame(ensembl_gene_ids_rows).reindex(columns=self.ENSEMBL_GENE_IDS_COLUMNS) if len(ensembl_gene_ids_rows) else DataFrame(columns=self.ENSEMBL_GENE_IDS_COLUMNS)
-        self.entrez_gene_ids = DataFrame(entrez_gene_ids_rows).reindex(columns=self.ENTREZ_GENE_IDS_COLUMNS) if len(entrez_gene_ids_rows) else DataFrame(columns=self.ENTREZ_GENE_IDS_COLUMNS)
-        self.regions = DataFrame(regions_rows).reindex(columns=self.REGIONS_COLUMNS) if len(regions_rows) else DataFrame(columns=self.REGIONS_COLUMNS)
+        self.genomic_contexts = DataFrame(genomic_context_rows).reindex(columns=_GENOMIC_CONTEXT_COLUMNS) if len(genomic_context_rows) else DataFrame(columns=_GENOMIC_CONTEXT_COLUMNS)
+        self.genes = DataFrame(genes_rows).reindex(columns=_GENES_COLUMNS) if len(genes_rows) else DataFrame(columns=_GENES_COLUMNS)
+        self.locations = DataFrame(locations_rows).reindex(columns=_LOCATIONS_COLUMNS) if len(locations_rows) else DataFrame(columns=_LOCATIONS_COLUMNS)
+        self.ensembl_gene_ids = DataFrame(ensembl_gene_ids_rows).reindex(columns=_ENSEMBL_GENE_IDS_COLUMNS) if len(ensembl_gene_ids_rows) else DataFrame(columns=_ENSEMBL_GENE_IDS_COLUMNS)
+        self.entrez_gene_ids = DataFrame(entrez_gene_ids_rows).reindex(columns=_ENTREZ_GENE_IDS_COLUMNS) if len(entrez_gene_ids_rows) else DataFrame(columns=_ENTREZ_GENE_IDS_COLUMNS)
+        self.regions = DataFrame(regions_rows).reindex(columns=_REGIONS_COLUMNS) if len(regions_rows) else DataFrame(columns=_REGIONS_COLUMNS)
 
     def __str__(self):
         if self.mode == 'Fat':

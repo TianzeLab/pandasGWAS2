@@ -7,12 +7,14 @@ set_option('display.colheader_justify', 'center')
 set_option('display.precision', 3)
 
 
+_TRAIT_COLUMNS = [
+    'efo_trait',
+    'uri',
+    'efo_id'
+]
+
+
 class Trait:
-    TRAIT_COLUMNS = [
-        'efo_trait',
-        'uri',
-        'efo_id'
-    ]
 
     def __init__(self, data: list = None, mode: str = "Fat"):
         if mode not in ['Thin', 'Fat']:
@@ -54,7 +56,7 @@ class Trait:
                 normalized[key] = value
 
             standardized = {}
-            for col in self.TRAIT_COLUMNS:
+            for col in _TRAIT_COLUMNS:
                 value = normalized.get(col, None)
                 standardized[col] = value
 
@@ -63,17 +65,17 @@ class Trait:
         self.raw_data = standardized_data
 
         if len(standardized_data) == 0:
-            self.traits = DataFrame(columns=self.TRAIT_COLUMNS)
+            self.traits = DataFrame(columns=_TRAIT_COLUMNS)
             return
 
         trait_rows = []
 
         for record in standardized_data:
             trait_rows.append({
-                col: record.get(col, None) for col in self.TRAIT_COLUMNS
+                col: record.get(col, None) for col in _TRAIT_COLUMNS
             })
 
-        self.traits = DataFrame(trait_rows).reindex(columns=self.TRAIT_COLUMNS) if len(trait_rows) else DataFrame(columns=self.TRAIT_COLUMNS)
+        self.traits = DataFrame(trait_rows).reindex(columns=_TRAIT_COLUMNS) if len(trait_rows) else DataFrame(columns=_TRAIT_COLUMNS)
 
     def __str__(self):
         if self.mode == 'Fat':
@@ -214,4 +216,3 @@ class Trait:
 
     def __len__(self):
         return len(self.raw_data)
-
