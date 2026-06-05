@@ -20,4 +20,4 @@ def test_get_genomic_contexts():
     assert genomic_context_b.regions.shape[0] >= 1
 
     assert genomic_context_b[0] == genomic_context_b
-    assert genomic_context_b['rs3093017/206217817'] == genomic_context_b
+    assert genomic_context_b['rs3093017|206217817'] == genomic_context_b

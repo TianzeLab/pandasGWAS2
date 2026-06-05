@@ -415,7 +415,7 @@ class GenomicContext:
         raw_data = self.raw_data
         raw_data_dict = {}
         for j in raw_data:
-            raw_data_dict['{}/{}'.format(j['rs_id'], j['genomicContext_id'])] = j
+            raw_data_dict['{}|{}'.format(j['rs_id'], j['genomicContext_id'])] = j
 
         sub_set = []
         for i in arr:

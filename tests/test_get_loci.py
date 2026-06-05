@@ -18,4 +18,4 @@ def test_get_loci():
     assert locus_b.strongest_risk_alleles.shape[0] >= 1
 
     assert locus_b[0] == locus_b
-    assert locus_b['169106883/169106882'] == locus_b
+    assert locus_b['169106883|169106882'] == locus_b

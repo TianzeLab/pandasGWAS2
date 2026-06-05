@@ -17,4 +17,4 @@ def test_get_ancestries():
     assert ancestry_b.ancestries.iloc[0]['ancestry_id'] == '7529'
 
     assert ancestry_b[0] == ancestry_b
-    assert ancestry_b['GCST000853/7529'] == ancestry_b
+    assert ancestry_b['GCST000853|7529'] == ancestry_b
