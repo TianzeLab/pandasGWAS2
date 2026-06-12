@@ -20,8 +20,8 @@ _COUNTRY_OF_RECRUITMENTS_COLUMNS = ['accession_id', 'ancestry_id', 'major_area',
 
 _NESTED_FIELDS = [
     'ancestral_groups',
-    'country_of_origins',
-    'country_of_recruitments'
+    'country_of_origin',
+    'country_of_recruitment'
 ]
 
 
@@ -124,7 +124,7 @@ class Ancestry:
                     })
 
             # country_of_origins
-            raw_country_of_origins = record.get('country_of_origins', None)
+            raw_country_of_origins = record.get('country_of_origin', None)
             if raw_country_of_origins is None:
                 iterable_country_of_origins = []
             elif isinstance(raw_country_of_origins, list):
@@ -150,7 +150,7 @@ class Ancestry:
                     })
 
             # country_of_recruitments
-            raw_country_of_recruitments = record.get('country_of_recruitments', None)
+            raw_country_of_recruitments = record.get('country_of_recruitment', None)
             if raw_country_of_recruitments is None:
                 iterable_country_of_recruitments = []
             elif isinstance(raw_country_of_recruitments, list):
