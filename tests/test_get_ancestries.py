@@ -1,4 +1,4 @@
-from pandasgwas.get_ancestries import get_ancestries
+from pandasgwas import get_ancestries
 
 
 def test_get_ancestries():
