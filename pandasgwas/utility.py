@@ -19,7 +19,7 @@ def is_API_available() -> bool:
     try:
         with requests.Session() as s:
             s.mount('https://', HTTPAdapter(max_retries=5))
-            r = s.get("https://www.ebi.ac.uk/gwas/rest/api/efoTraits")
+            r = s.get("https://www.ebi.ac.uk/gwas/rest/api/v2/efo-traits/")
             if r.status_code == 200:
                 return True
             return False
