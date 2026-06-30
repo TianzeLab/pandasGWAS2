@@ -20,5 +20,5 @@ from pandasgwas.get_loci import get_loci
 from pandasgwas.get_snps import get_snps
 from pandasgwas.get_traits import get_traits
 # from pandasgwas.set_operation import bind, intersect, set_diff, set_xor, union, set_equal
-from pandasgwas.utility import get_child_efo, is_API_available, clear_cache
+from pandasgwas.utility import is_API_available, clear_cache
 import pandasgwas.summary_statistics
