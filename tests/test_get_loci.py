@@ -1,4 +1,4 @@
-from pandasgwas.get_loci import get_loci
+from pandasgwas import get_loci
 
 
 def test_get_loci():

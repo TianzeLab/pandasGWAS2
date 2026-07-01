@@ -1,4 +1,4 @@
-from pandasgwas.get_publications import get_publications
+from pandasgwas import get_publications
 
 
 def test_get_publications():

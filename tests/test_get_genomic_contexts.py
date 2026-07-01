@@ -1,4 +1,4 @@
-from pandasgwas.get_genomic_contexts import get_genomic_contexts
+from pandasgwas import get_genomic_contexts
 
 
 def test_get_genomic_contexts():

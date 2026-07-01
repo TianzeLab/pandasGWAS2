@@ -1,4 +1,4 @@
-from pandasgwas.get_genes import get_genes
+from pandasgwas import get_genes
 
 
 def test_get_genes():
