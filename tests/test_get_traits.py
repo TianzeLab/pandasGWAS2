@@ -1,4 +1,4 @@
-from pandasgwas.get_traits import get_traits
+from pandasgwas import get_traits
 
 
 def test_get_traits():
