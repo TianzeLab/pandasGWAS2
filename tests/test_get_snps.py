@@ -1,4 +1,4 @@
-from pandasgwas.get_snps import get_snps
+from pandasgwas import get_snps
 
 
 def test_get_snps():
