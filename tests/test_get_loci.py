@@ -2,6 +2,7 @@ from pandasgwas import get_loci
 
 
 def test_get_loci():
+    locus_a = get_loci(association_id='5860')
     locus_a = get_loci(association_id='169106883', mode='Thin')
     locus_a = get_loci(association_id='169106883')
 
