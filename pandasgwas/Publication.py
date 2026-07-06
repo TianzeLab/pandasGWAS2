@@ -11,7 +11,14 @@ _PUBLICATION_COLUMNS = [
     'pubmed_id',
     'publication_date',
     'journal',
-    'title'
+    'title',
+    'first_author.full_name',
+    'first_author.full_name_standard',
+    'first_author.first_name',
+    'first_author.last_name',
+    'first_author.initials',
+    'first_author.affiliation',
+    'first_author.orcid'
 ]
 
 _AUTHORS_COLUMNS = [
@@ -25,20 +32,8 @@ _AUTHORS_COLUMNS = [
     'orcid'
 ]
 
-_FIRST_AUTHORS_COLUMNS = [
-    'pubmed_id',
-    'full_name',
-    'full_name_standard',
-    'first_name',
-    'last_name',
-    'initials',
-    'affiliation',
-    'orcid'
-]
-
 _NESTED_FIELDS = [
-    'authors',
-    'first_author'
+    'authors'
 ]
 
 
@@ -83,9 +78,29 @@ class Publication:
             for key, value in rec.items():
                 normalized[key] = value
 
+            raw_first_author = normalized.get('first_author', None)
+            if isinstance(raw_first_author, list):
+                if len(raw_first_author) == 0:
+                    first_author = None
+                else:
+                    first_author = raw_first_author[0]
+            else:
+                first_author = raw_first_author
+
             standardized = {}
             for col in _PUBLICATION_COLUMNS:
-                value = normalized.get(col, None)
+                if col.startswith('first_author.'):
+                    author_col = col.split('.', 1)[1]
+                    if col in normalized:
+                        value = normalized.get(col, None)
+                    elif isinstance(first_author, dict):
+                        value = first_author.get(author_col, None)
+                    elif author_col == 'full_name':
+                        value = first_author
+                    else:
+                        value = None
+                else:
+                    value = normalized.get(col, None)
                 standardized[col] = value
 
             for field in _NESTED_FIELDS:
@@ -98,12 +113,10 @@ class Publication:
         if len(standardized_data) == 0:
             self.publications = DataFrame(columns=_PUBLICATION_COLUMNS)
             self.authors = DataFrame(columns=_AUTHORS_COLUMNS)
-            self.first_authors = DataFrame(columns=_FIRST_AUTHORS_COLUMNS)
             return
 
         publication_rows = []
         authors_rows = []
-        first_authors_rows = []
 
         for record in standardized_data:
             pubmed_id = record.get('pubmed_id', None)
@@ -143,52 +156,18 @@ class Publication:
                         'orcid': None
                     })
 
-            raw_first_author = record.get('first_author', None)
-            if raw_first_author is None:
-                iterable_first_author = []
-            elif isinstance(raw_first_author, list):
-                iterable_first_author = raw_first_author
-            else:
-                iterable_first_author = [raw_first_author]
-            for item in iterable_first_author:
-                if isinstance(item, dict):
-                    first_authors_rows.append({
-                        'pubmed_id': pubmed_id,
-                        'full_name': item.get('full_name', None),
-                        'full_name_standard': item.get('full_name_standard', None),
-                        'first_name': item.get('first_name', None),
-                        'last_name': item.get('last_name', None),
-                        'initials': item.get('initials', None),
-                        'affiliation': item.get('affiliation', None),
-                        'orcid': item.get('orcid', None)
-                    })
-                else:
-                    first_authors_rows.append({
-                        'pubmed_id': pubmed_id,
-                        'full_name': item,
-                        'full_name_standard': None,
-                        'first_name': None,
-                        'last_name': None,
-                        'initials': None,
-                        'affiliation': None,
-                        'orcid': None
-                    })
-
         self.publications = DataFrame(publication_rows).reindex(columns=_PUBLICATION_COLUMNS) if len(publication_rows) else DataFrame(columns=_PUBLICATION_COLUMNS)
         self.authors = DataFrame(authors_rows).reindex(columns=_AUTHORS_COLUMNS) if len(authors_rows) else DataFrame(columns=_AUTHORS_COLUMNS)
-        self.first_authors = DataFrame(first_authors_rows).reindex(columns=_FIRST_AUTHORS_COLUMNS) if len(first_authors_rows) else DataFrame(columns=_FIRST_AUTHORS_COLUMNS)
 
     def __str__(self):
         if self.mode == 'Fat':
             return (
-                    "Publication is running in fat mode. It has 3 DataFrames with hierarchical dependencies.\n"
+                    "Publication is running in fat mode. It has 2 DataFrames with hierarchical dependencies.\n"
                     "publications: %d rows\n"
-                    "|\n -authors: %d rows\n"
-                    "|\n -first_authors: %d rows"
+                    "|\n -authors: %d rows"
                     % (
                         len(self.publications),
                         len(self.authors),
-                        len(self.first_authors),
                     )
             )
         if self.mode == 'Thin':

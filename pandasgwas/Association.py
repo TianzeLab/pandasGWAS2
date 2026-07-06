@@ -44,12 +44,12 @@ _SNP_EFFECT_ALLELES_COLUMNS = ['association_id', 'snp_effect_allele']
 
 _NESTED_FIELDS = [
     'efo_traits',
-    'snp_alleles',
+    'snp_allele',
     'bg_efo_traits',
-    'reported_traits',
+    'reported_trait',
     'locations',
     'mapped_genes',
-    'snp_effect_alleles'
+    'snp_effect_allele'
 ]
 
 
@@ -238,7 +238,7 @@ class Association:
             for item in iterable_locations:
                 locations_rows.append({
                     'association_id': association_id,
-                    'location': item
+                    'locations': item
                 })
 
             # mapped_genes
@@ -252,7 +252,7 @@ class Association:
             for item in iterable_mapped_genes:
                 mapped_genes_rows.append({
                     'association_id': association_id,
-                    'mapped_gene': item
+                    'mapped_genes': item
                 })
 
             # snp_effect_alleles（属性名保持不变，数据字段统一用 snp_effect_allele）
@@ -271,7 +271,7 @@ class Association:
 
         self.associations = DataFrame(association_rows).reindex(columns=_ASSOCIATION_COLUMNS) if len(association_rows) else DataFrame(columns=_ASSOCIATION_COLUMNS)
         self.efo_traits = DataFrame(efo_traits_rows).reindex(columns=_EFO_TRAITS_COLUMNS) if len(efo_traits_rows) else DataFrame(columns=_EFO_TRAITS_COLUMNS)
-        self.snp_allele = DataFrame(snp_allele_rows).reindex(columns=_SNP_ALLELE_COLUMNS) if len(snp_allele_rows) else DataFrame(columns=_SNP_ALLELE_COLUMNS)
+        self.snp_alleles = DataFrame(snp_allele_rows).reindex(columns=_SNP_ALLELE_COLUMNS) if len(snp_allele_rows) else DataFrame(columns=_SNP_ALLELE_COLUMNS)
         self.bg_efo_traits = DataFrame(bg_efo_traits_rows).reindex(columns=_BG_EFO_TRAITS_COLUMNS) if len(bg_efo_traits_rows) else DataFrame(columns=_BG_EFO_TRAITS_COLUMNS)
         self.reported_traits = DataFrame(reported_traits_rows).reindex(columns=_REPORTED_TRAITS_COLUMNS) if len(reported_traits_rows) else DataFrame(columns=_REPORTED_TRAITS_COLUMNS)
         self.locations = DataFrame(locations_rows).reindex(columns=_LOCATIONS_COLUMNS) if len(locations_rows) else DataFrame(columns=_LOCATIONS_COLUMNS)

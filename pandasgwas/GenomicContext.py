@@ -28,17 +28,15 @@ _GENES_COLUMNS = [
     'cytogenic_region',
     'biotype'
 ]
-_LOCATIONS_COLUMNS = ['rs_id', 'genomicContext_id', 'chromosome_name', 'chromosome_position']
+_LOCATIONS_COLUMNS = ['rs_id', 'genomicContext_id', 'chromosome_name', 'chromosome_position', 'region.name']
 _ENSEMBL_GENE_IDS_COLUMNS = ['rs_id', 'genomicContext_id', 'gene_name', 'ensembl_gene_ids']
 _ENTREZ_GENE_IDS_COLUMNS = ['rs_id', 'genomicContext_id', 'gene_name', 'entrez_gene_ids']
-_REGIONS_COLUMNS = ['rs_id', 'genomicContext_id', 'chromosome_name', 'region']
 
 _NESTED_FIELDS = [
     'genes',
     'locations',
     'ensembl_gene_ids',
-    'entrez_gene_ids',
-    'regions'
+    'entrez_gene_ids'
 ]
 
 
@@ -57,8 +55,7 @@ class GenomicContext:
             ('genes', ['genes', 'gene']),
             ('locations', ['locations', 'location']),
             ('ensembl_gene_ids', ['ensembl_gene_ids', 'ensemblGeneIds']),
-            ('entrez_gene_ids', ['entrez_gene_ids', 'entrezGeneIds']),
-            ('regions', ['regions', 'region'])
+            ('entrez_gene_ids', ['entrez_gene_ids', 'entrezGeneIds'])
         ]
         for key, source_keys in aliases:
             value = None
@@ -131,7 +128,6 @@ class GenomicContext:
             self.locations = DataFrame(columns=_LOCATIONS_COLUMNS)
             self.ensembl_gene_ids = DataFrame(columns=_ENSEMBL_GENE_IDS_COLUMNS)
             self.entrez_gene_ids = DataFrame(columns=_ENTREZ_GENE_IDS_COLUMNS)
-            self.regions = DataFrame(columns=_REGIONS_COLUMNS)
             return
 
         genomic_context_rows = []
@@ -139,7 +135,6 @@ class GenomicContext:
         locations_rows = []
         ensembl_gene_ids_rows = []
         entrez_gene_ids_rows = []
-        regions_rows = []
 
         for record in standardized_data:
             rs_id = record.get('rs_id', None)
@@ -240,44 +235,26 @@ class GenomicContext:
                     chromosome_position = item.get('chromosome_position', None)
                     if chromosome_position is None:
                         chromosome_position = item.get('chromosomePosition', None)
+                    region_name = None
+                    raw_region = item.get('region', None)
+                    if isinstance(raw_region, dict):
+                        region_name = raw_region.get('name', None)
+                    elif raw_region is not None:
+                        region_name = raw_region
                     locations_rows.append({
                         'rs_id': rs_id,
                         'genomicContext_id': genomicContext_id,
                         'chromosome_name': chromosome_name,
-                        'chromosome_position': chromosome_position
+                        'chromosome_position': chromosome_position,
+                        'region.name': region_name
                     })
-
-                    raw_region = item.get('region', None)
-                    if raw_region is None:
-                        iterable_location_regions = []
-                    elif isinstance(raw_region, list):
-                        iterable_location_regions = raw_region
-                    else:
-                        iterable_location_regions = [raw_region]
-                    for region in iterable_location_regions:
-                        if isinstance(region, dict):
-                            region_name = region.get('region', None)
-                            if region_name is None:
-                                region_name = region.get('name', None)
-                            regions_rows.append({
-                                'rs_id': rs_id,
-                                'genomicContext_id': genomicContext_id,
-                                'chromosome_name': chromosome_name,
-                                'region': region_name
-                            })
-                        else:
-                            regions_rows.append({
-                                'rs_id': rs_id,
-                                'genomicContext_id': genomicContext_id,
-                                'chromosome_name': chromosome_name,
-                                'region': region
-                            })
                 else:
                     locations_rows.append({
                         'rs_id': rs_id,
                         'genomicContext_id': genomicContext_id,
                         'chromosome_name': None,
-                        'chromosome_position': item
+                        'chromosome_position': item,
+                        'region.name': None
                     })
 
             raw_ensembl_gene_ids = record.get('ensembl_gene_ids', None)
@@ -338,59 +315,27 @@ class GenomicContext:
                         'entrez_gene_ids': item
                     })
 
-            raw_regions = record.get('regions', None)
-            if raw_regions is None:
-                iterable_regions = []
-            elif isinstance(raw_regions, list):
-                iterable_regions = raw_regions
-            else:
-                iterable_regions = [raw_regions]
-            for item in iterable_regions:
-                if isinstance(item, dict):
-                    chromosome_name = item.get('chromosome_name', None)
-                    if chromosome_name is None:
-                        chromosome_name = item.get('chromosomeName', None)
-                    region_name = item.get('region', None)
-                    if region_name is None:
-                        region_name = item.get('name', None)
-                    regions_rows.append({
-                        'rs_id': rs_id,
-                        'genomicContext_id': genomicContext_id,
-                        'chromosome_name': chromosome_name,
-                        'region': region_name
-                    })
-                else:
-                    regions_rows.append({
-                        'rs_id': rs_id,
-                        'genomicContext_id': genomicContext_id,
-                        'chromosome_name': None,
-                        'region': item
-                    })
-
         self.genomic_contexts = DataFrame(genomic_context_rows).reindex(columns=_GENOMIC_CONTEXT_COLUMNS) if len(genomic_context_rows) else DataFrame(columns=_GENOMIC_CONTEXT_COLUMNS)
         self.genes = DataFrame(genes_rows).reindex(columns=_GENES_COLUMNS) if len(genes_rows) else DataFrame(columns=_GENES_COLUMNS)
         self.locations = DataFrame(locations_rows).reindex(columns=_LOCATIONS_COLUMNS) if len(locations_rows) else DataFrame(columns=_LOCATIONS_COLUMNS)
         self.ensembl_gene_ids = DataFrame(ensembl_gene_ids_rows).reindex(columns=_ENSEMBL_GENE_IDS_COLUMNS) if len(ensembl_gene_ids_rows) else DataFrame(columns=_ENSEMBL_GENE_IDS_COLUMNS)
         self.entrez_gene_ids = DataFrame(entrez_gene_ids_rows).reindex(columns=_ENTREZ_GENE_IDS_COLUMNS) if len(entrez_gene_ids_rows) else DataFrame(columns=_ENTREZ_GENE_IDS_COLUMNS)
-        self.regions = DataFrame(regions_rows).reindex(columns=_REGIONS_COLUMNS) if len(regions_rows) else DataFrame(columns=_REGIONS_COLUMNS)
 
     def __str__(self):
         if self.mode == 'Fat':
             return (
-                    "GenomicContext is running in fat mode. It has 6 DataFrames with hierarchical dependencies.\n"
+                    "GenomicContext is running in fat mode. It has 5 DataFrames with hierarchical dependencies.\n"
                     "genomic_contexts: %d rows\n"
                     "|\n -genes: %d rows\n"
                     "|\n -locations: %d rows\n"
                     "|\n -ensembl_gene_ids: %d rows\n"
-                    "|\n -entrez_gene_ids: %d rows\n"
-                    "|\n -regions: %d rows"
+                    "|\n -entrez_gene_ids: %d rows"
                     % (
                         len(self.genomic_contexts),
                         len(self.genes),
                         len(self.locations),
                         len(self.ensembl_gene_ids),
                         len(self.entrez_gene_ids),
-                        len(self.regions),
                     )
             )
         if self.mode == 'Thin':

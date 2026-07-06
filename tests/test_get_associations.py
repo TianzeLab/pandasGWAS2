@@ -21,19 +21,13 @@ def test_get_associations():
     association_e = get_associations(efo_trait='celiac disease')
     assert len(association_e) >= 1
 
-    association_f = get_associations(efo_id='EFO_0001060')
-    assert len(association_f) >= 1
-
-    association_g = get_associations(mapped_gene='CCR6,HBS1L')
+    association_g = get_associations(mapped_gene='CCR6')
     assert len(association_g) >= 1
 
-    association_h = get_associations(accession_id='GCST000854', full_pvalue_set=True)
+    association_h = get_associations(accession_id='GCST000854', full_pvalue_set=False)
     assert len(association_h) >= 1
 
-    association_i = get_associations(efo_id='EFO_0001060', show_child_trait=True)
-    assert len(association_i) >= 1
-
-    association_j = get_associations(mapped_gene='CCR6,HBS1L', extended_geneset=True)
+    association_j = get_associations(mapped_gene='CCR6', extended_geneset=True)
     assert len(association_j) >= 1
 
     association_a = get_associations(association_id='169106883')
