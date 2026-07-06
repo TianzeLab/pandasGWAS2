@@ -18,7 +18,7 @@ def test_get_studies():
     study_d = get_studies(accession_id='GCST000854', full_pvalue_set=False)
     assert len(study_d) >= 1
 
-    study_e = get_studies(efo_id='EFO_0001060')
+    study_e = get_studies(efo_id='MONDO_0005130')
     assert len(study_e) >= 1
 
     study_f = get_studies(efo_trait='celiac disease')
