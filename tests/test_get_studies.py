@@ -27,13 +27,13 @@ def test_get_studies():
     study_g = get_studies(cohort='BioImage')
     assert len(study_g) >= 1
 
-    study_k = get_studies(efo_id='EFO_0001060', show_child_trait=True)
+    study_k = get_studies(efo_id='MONDO_0005130', show_child_trait=True)
     assert len(study_k) >= 1
 
-    study_l = get_studies(mapped_gene='CCR6,HBS1L')
+    study_l = get_studies(mapped_gene='CCR6')
     assert len(study_l) >= 1
 
-    study_m = get_studies(mapped_gene='CCR6,HBS1L', extended_geneset=True)
+    study_m = get_studies(mapped_gene='CCR6', extended_geneset=True)
     assert len(study_m) >= 1
 
     study_a = get_studies(accession_id='GCST000854')
