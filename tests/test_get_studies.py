@@ -21,6 +21,7 @@ def test_get_studies():
     study_e = get_studies(efo_id='MONDO_0005130')
     assert len(study_e) >= 1
 
+
     study_f = get_studies(efo_trait='celiac disease')
     assert len(study_f) >= 1
 

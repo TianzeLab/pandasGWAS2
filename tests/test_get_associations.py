@@ -24,6 +24,7 @@ def test_get_associations():
     association_f = get_associations(efo_id='MONDO_0005130')
     assert len(association_f) >= 1
 
+
     association_g = get_associations(mapped_gene='CCR6')
     assert len(association_g) >= 1
 
@@ -32,7 +33,6 @@ def test_get_associations():
 
     association_i = get_associations(efo_trait="celiac disease", show_child_trait=True)
     assert len(association_i) >= 1
-
     association_j = get_associations(mapped_gene='CCR6', extended_geneset=True)
     assert len(association_j) >= 1
 
