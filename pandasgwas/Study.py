@@ -30,7 +30,6 @@ _EFO_TRAITS_COLUMNS = ['accession_id', 'efo_id', 'efo_trait']
 _GENOTYPING_TECHNOLOGIES_COLUMNS = ['accession_id', 'genotyping_technologies']
 _DISCOVERY_ANCESTRIES_COLUMNS = ['accession_id', 'discovery_ancestry']
 _REPLICATION_ANCESTRIES_COLUMNS = ['accession_id', 'replication_ancestry']
-_FULL_SUMMARY_STATS_COLUMNS = ['accession_id', 'full_summary_stats']
 _BG_EFO_TRAITS_COLUMNS = ['accession_id', 'efo_id', 'efo_trait']
 _COHORTS_COLUMNS = ['accession_id', 'cohort']
 _ARRAY_MANUFACTURERS_COLUMNS = ['accession_id', 'array_manufacturer']
@@ -41,7 +40,6 @@ _NESTED_FIELDS = [
     'genotyping_technologies',
     'discovery_ancestry',
     'replication_ancestry',
-    'full_summary_stats',
     'bg_efo_traits',
     'cohort',
     'array_manufacturer'
@@ -107,7 +105,6 @@ class Study:
             self.genotyping_technologies = DataFrame(columns=_GENOTYPING_TECHNOLOGIES_COLUMNS)
             self.discovery_ancestries = DataFrame(columns=_DISCOVERY_ANCESTRIES_COLUMNS)
             self.replication_ancestries = DataFrame(columns=_REPLICATION_ANCESTRIES_COLUMNS)
-            self.full_summary_stats = DataFrame(columns=_FULL_SUMMARY_STATS_COLUMNS)
             self.bg_efo_traits = DataFrame(columns=_BG_EFO_TRAITS_COLUMNS)
             self.cohorts = DataFrame(columns=_COHORTS_COLUMNS)
             self.array_manufacturers = DataFrame(columns=_ARRAY_MANUFACTURERS_COLUMNS)
@@ -118,7 +115,6 @@ class Study:
         genotyping_technologies_rows = []
         discovery_ancestries_rows = []
         replication_ancestries_rows = []
-        full_summary_stats_rows = []
         bg_efo_traits_rows = []
         cohorts_rows = []
         array_manufacturers_rows = []
@@ -195,20 +191,6 @@ class Study:
                     'replication_ancestry': item
                 })
 
-            # full_summary_stats
-            raw_full_summary_stats = record.get('full_summary_stats', None)
-            if raw_full_summary_stats is None:
-                iterable_full_summary_stats = []
-            elif isinstance(raw_full_summary_stats, list):
-                iterable_full_summary_stats = raw_full_summary_stats
-            else:
-                iterable_full_summary_stats = [raw_full_summary_stats]
-            for item in iterable_full_summary_stats:
-                full_summary_stats_rows.append({
-                    'accession_id': accession_id,
-                    'full_summary_stats': item
-                })
-
             # bg_efo_traits
             raw_bg_efo_traits = record.get('bg_efo_traits', None)
             if raw_bg_efo_traits is None:
@@ -264,7 +246,6 @@ class Study:
         self.genotyping_technologies = DataFrame(genotyping_technologies_rows).reindex(columns=_GENOTYPING_TECHNOLOGIES_COLUMNS) if len(genotyping_technologies_rows) else DataFrame(columns=_GENOTYPING_TECHNOLOGIES_COLUMNS)
         self.discovery_ancestries = DataFrame(discovery_ancestries_rows).reindex(columns=_DISCOVERY_ANCESTRIES_COLUMNS) if len(discovery_ancestries_rows) else DataFrame(columns=_DISCOVERY_ANCESTRIES_COLUMNS)
         self.replication_ancestries = DataFrame(replication_ancestries_rows).reindex(columns=_REPLICATION_ANCESTRIES_COLUMNS) if len(replication_ancestries_rows) else DataFrame(columns=_REPLICATION_ANCESTRIES_COLUMNS)
-        self.full_summary_stats = DataFrame(full_summary_stats_rows).reindex(columns=_FULL_SUMMARY_STATS_COLUMNS) if len(full_summary_stats_rows) else DataFrame(columns=_FULL_SUMMARY_STATS_COLUMNS)
         self.bg_efo_traits = DataFrame(bg_efo_traits_rows).reindex(columns=_BG_EFO_TRAITS_COLUMNS) if len(bg_efo_traits_rows) else DataFrame(columns=_BG_EFO_TRAITS_COLUMNS)
         self.cohorts = DataFrame(cohorts_rows).reindex(columns=_COHORTS_COLUMNS) if len(cohorts_rows) else DataFrame(columns=_COHORTS_COLUMNS)
         self.array_manufacturers = DataFrame(array_manufacturers_rows).reindex(columns=_ARRAY_MANUFACTURERS_COLUMNS) if len(array_manufacturers_rows) else DataFrame(columns=_ARRAY_MANUFACTURERS_COLUMNS)
@@ -272,13 +253,12 @@ class Study:
     def __str__(self):
         if self.mode == 'Fat':
             return (
-                    "Study is running in fat mode. It has 9 DataFrames with hierarchical dependencies.\n"
+                    "Study is running in fat mode. It has 8 DataFrames with hierarchical dependencies.\n"
                     "studies: %d rows\n"
                     "|\n -efo_traits: %d rows\n"
                     "|\n -genotyping_technologies: %d rows\n"
                     "|\n -discovery_ancestries: %d rows\n"
                     "|\n -replication_ancestries: %d rows\n"
-                    "|\n -full_summary_stats: %d rows\n"
                     "|\n -bg_efo_traits: %d rows\n"
                     "|\n -cohorts: %d rows\n"
                     "|\n -array_manufacturers: %d rows"
@@ -288,7 +268,6 @@ class Study:
                         len(self.genotyping_technologies),
                         len(self.discovery_ancestries),
                         len(self.replication_ancestries),
-                        len(self.full_summary_stats),
                         len(self.bg_efo_traits),
                         len(self.cohorts),
                         len(self.array_manufacturers),
@@ -426,6 +405,5 @@ class Study:
 
     def __len__(self):
         return len(self.raw_data)
-
 
 

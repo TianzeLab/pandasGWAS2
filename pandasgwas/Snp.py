@@ -19,8 +19,7 @@ _SNP_COLUMNS = [
     'most_severe_consequence'
 ]
 
-_LOCATIONS_COLUMNS = ['rs_id', 'chromosome_name', 'chromosome_position']
-_REGIONS_COLUMNS = ['rs_id', 'region']
+_LOCATIONS_COLUMNS = ['rs_id', 'chromosome_name', 'chromosome_position', 'region.name']
 _MAPPED_GENES_COLUMNS = ['rs_id', 'mapped_genes']
 
 _NESTED_FIELDS = [
@@ -85,13 +84,11 @@ class Snp:
         if len(standardized_data) == 0:
             self.snps = DataFrame(columns=_SNP_COLUMNS)
             self.locations = DataFrame(columns=_LOCATIONS_COLUMNS)
-            self.regions = DataFrame(columns=_REGIONS_COLUMNS)
             self.mapped_genes = DataFrame(columns=_MAPPED_GENES_COLUMNS)
             return
 
         snp_rows = []
         locations_rows = []
-        regions_rows = []
         mapped_genes_rows = []
 
         for record in standardized_data:
@@ -112,28 +109,26 @@ class Snp:
                 iterable_locations = [raw_locations]
             for item in iterable_locations:
                 if isinstance(item, dict):
+                    raw_region = item.get('region', None)
+                    if raw_region is None:
+                        region_name = None
+                    elif isinstance(raw_region, dict):
+                        region_name = raw_region.get('name', None)
+                    else:
+                        region_name = raw_region
+
                     locations_rows.append({
                         'rs_id': rs_id,
                         'chromosome_name': item.get('chromosome_name', None),
-                        'chromosome_position': item.get('chromosome_position', None)
-                    })
-
-                    raw_region = item.get('region', None)
-                    if raw_region is None:
-                        region = None
-                    elif isinstance(raw_region, dict):
-                        region = raw_region.get('name', None)
-                    else:
-                        region = raw_region
-                    regions_rows.append({
-                        'rs_id': rs_id,
-                        'region': region
+                        'chromosome_position': item.get('chromosome_position', None),
+                        'region.name': region_name
                     })
                 else:
                     locations_rows.append({
                         'rs_id': rs_id,
                         'chromosome_name': item,
-                        'chromosome_position': None
+                        'chromosome_position': None,
+                        'region.name': None
                     })
 
             # mapped_genes
@@ -152,21 +147,18 @@ class Snp:
 
         self.snps = DataFrame(snp_rows).reindex(columns=_SNP_COLUMNS) if len(snp_rows) else DataFrame(columns=_SNP_COLUMNS)
         self.locations = DataFrame(locations_rows).reindex(columns=_LOCATIONS_COLUMNS) if len(locations_rows) else DataFrame(columns=_LOCATIONS_COLUMNS)
-        self.regions = DataFrame(regions_rows).reindex(columns=_REGIONS_COLUMNS) if len(regions_rows) else DataFrame(columns=_REGIONS_COLUMNS)
         self.mapped_genes = DataFrame(mapped_genes_rows).reindex(columns=_MAPPED_GENES_COLUMNS) if len(mapped_genes_rows) else DataFrame(columns=_MAPPED_GENES_COLUMNS)
 
     def __str__(self):
         if self.mode == 'Fat':
             return (
-                    "Snp is running in fat mode. It has 4 DataFrames with hierarchical dependencies.\n"
+                    "Snp is running in fat mode. It has 3 DataFrames with hierarchical dependencies.\n"
                     "snps: %d rows\n"
                     "|\n -locations: %d rows\n"
-                    "|\n -regions: %d rows\n"
                     "|\n -mapped_genes: %d rows"
                     % (
                         len(self.snps),
                         len(self.locations),
-                        len(self.regions),
                         len(self.mapped_genes),
                     )
             )
