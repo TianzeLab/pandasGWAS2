@@ -57,6 +57,28 @@ def get_locus(url: str, cached=True) -> List[Dict]:
 
 
 def reinit_cache(field: str = 'All', maxsize: int = 2 * 1024, ttl: int = 60 * 60 * 24) -> None:
+    """
+    Reinitialize some or all of the cache pools.
+
+    Args:
+        field: It can be one of the following: 'All', 'Association', 'Study', 'Trait', 'Snp', 'Ancestry', 'Publication', 'GenomicContext', 'Gene','Locus'
+        maxsize: The number of HTTP requests that can be stored in the cache pool.
+        ttl: The unit is seconds. Expiration time.
+
+    Returns:
+        None
+
+    ```Python
+    from pandasgwas import get_publications, reinit_cache
+
+    # Reinitialize all the cache pools. Each cache pool can only store 10 HTTP requests, and the expiration time is 10 seconds.
+    reinit_cache(field = 'All', maxsize = 10, ttl = 10)
+    pub = get_publications()
+    # Reinitialize the cache used by get_publications()
+    reinit_cache(field = 'Publication', maxsize = 10, ttl = 10)
+    pub = get_publications()
+    ```
+    """
     global association_cache
     global study_cache
     global trait_cache
@@ -99,6 +121,28 @@ def reinit_cache(field: str = 'All', maxsize: int = 2 * 1024, ttl: int = 60 * 60
 
 
 def clear_cache(field: str = 'All') -> None:
+    """
+    Clear some or all of the cache pools.
+
+    Args:
+        field: It can be one of the following: 'All', 'Association', 'Study', 'Trait', 'Snp', 'Ancestry', 'Publication', 'GenomicContext', 'Gene', 'Locus'
+
+    Returns:
+        None
+
+    ```Python
+    from pandasgwas.get_publication import get_publications
+    from pandasgwas.client import clear_cache
+
+    # Clear all caches.
+    clear_cache('All')
+    pub = get_publications()
+    # Clear the cache used by get_publications()
+    clear_cache('Publication')
+    pub = get_publications()
+    ```
+
+    """
     if field not in fields_and_all:
         raise Exception('The field must one of %s' % str(fields_and_all))
     if field == 'All':
