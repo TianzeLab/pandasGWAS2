@@ -24,6 +24,36 @@ def get_studies(
     cached: bool = True,
     mode: str = 'Fat'
 ) -> Study:
+    """
+    Get Study data from the server.
+
+    Args:
+        accession_id: The study’s GWAS Catalog accession ID.
+        pubmed_id: pubmedId of the publication.
+        disease_trait: Free text description of the trait investigated in this study.
+        full_pvalue_set: Whether full summary statistics are available for this study.
+        efo_id: The trait URI shortform.
+        efo_trait: The trait name or label.
+        cohort: Discovery stage cohorts used in this study.
+        gxe: Whether the study investigates a gene-environment interaction.
+        ancestral_group: Ancestry category group label, assigned to reduce complexity within the data sets and place samples in context.
+        no_of_individuals: Number of individuals in this sample.
+        show_child_trait: display entities for descendants of a parent Efo Trait Term.
+        mapped_gene: Gene(s) overlapping the variant. If a variant is intergenic, the closest 5' and 3' genes are listed.
+        extended_geneset: Show extended matching genes in addition to the mapped genes.
+        cached: Whether or not to try to get data from the cache.
+        mode: Fat or Thin. Specifies the mode of the returned object.
+
+
+    Returns:
+        A Study object. Attributes of type DataFrame have hierarchical dependencies.
+
+    ```Python
+    from pandasGWAS2.get_studies import get_studies
+
+    ch = get_studies(accession_id='GCST000854')
+    ```
+    """
     params = {
         "accession_id": accession_id,
         "pubmed_id": pubmed_id,

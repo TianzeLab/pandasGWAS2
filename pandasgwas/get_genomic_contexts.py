@@ -13,6 +13,25 @@ def get_genomic_contexts(
     cached: bool = True,
     mode: str = 'Fat'
 ) -> GenomicContext:
+    """
+    Get GenomicContext data from the server.
+
+    Args:
+        rs_id: SNP rsID; if a haplotype it may include more than one rs number (multiple SNPs comprising the haplotype).
+        genomicContext_id: primary identifier of genomicContext table.
+        cached: Whether or not to try to get data from the cache.
+        mode: Fat or Thin. Specifies the mode of the returned object.
+
+
+    Returns:
+        A GenomicContext object. Attributes of type DataFrame have hierarchical dependencies.
+
+    ```Python
+    from pandasGWAS2.get_genomic_contexts import get_genomic_contexts
+
+    ch = get_genomic_contexts(rs_id='rs3093017')
+    ```
+    """
     if rs_id is None or str(rs_id).strip() == "":
         raise Exception("rs_id cannot be empty")
 
@@ -24,5 +43,4 @@ def get_genomic_contexts(
         data=get_genomicContext(query_url, cached=cached),
         mode=mode
     )
-
 

@@ -54,7 +54,58 @@ _NESTED_FIELDS = [
 
 
 class Association:
+    """
+       An object that stores data of type Association. To understand the significance of each column of the DataFrame. Please visit "Association" in [Gwas Catalog Documentation](https://www.ebi.ac.uk/gwas/rest/api/v2/docs/reference) for details.
 
+       Attributes:
+            raw_data: list. Converted from obtained JSON data.
+            associations: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            efo_traits: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            snp_allele: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            bg_efo_traits: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            reported_traits: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            locations: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            mapped_genes: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            snp_effect_alleles: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            mode: Fat or Thin. Specifies the mode of the returned object.
+
+       ```python
+       from pandasgwas.get_associations import get_associations
+
+       ch = get_associations(association_id='169106883')
+       ch
+       ch.raw_data
+       ch.mode
+       ch.associations
+       ch.efo_traits
+       ch.snp_allele
+       ch.bg_efo_traits
+       ch.reported_traits
+       ch.locations
+       ch.mapped_genes
+       ch.snp_effect_alleles
+       ```
+       Subset object s by either identifier or position
+       ```python
+       all_df = get_associations()
+       all_df[0].associations
+       all_df[0:3].associations
+       all_df['169106883'].associations
+       all_df[('169106883','218958492','218958441')].associations
+       ```
+       Objects can be manipulated like sets in the mathematical sense.
+       ```python
+       one = get_associations(association_id='169106883')
+       two = get_associations(association_id='218958492')
+       three = get_associations(association_id='218958441')
+       one_and_two = one+two
+       two_and_three = two+three
+       only_one = one_and_two - two_and_three
+       only_two = one_and_two & two_and_three
+       one_and_two_and_three = one_and_two | two_and_three
+       one_and_three = one_and_two ^ two_and_three
+       ```
+       """
     def __init__(self, data: list = None, mode: str = "Fat"):
         if mode not in ['Thin', 'Fat']:
             raise Exception("Mode must be Fat or Thin")

@@ -13,6 +13,25 @@ def get_loci(
     cached: bool = True,
     mode: str = 'Fat'
 ) -> Locus:
+    """
+    Get Locus data from the server.
+
+    Args:
+        association_id: primary identifier of Association table.
+        locus_id: primary identifier of Locus table.
+        cached: Whether or not to try to get data from the cache.
+        mode: Fat or Thin. Specifies the mode of the returned object.
+
+
+    Returns:
+        A Locus object. Attributes of type DataFrame have hierarchical dependencies.
+
+    ```Python
+    from pandasGWAS2.get_loci import get_loci
+
+    ch = get_loci(association_id='169106883')
+    ```
+    """
     if association_id is None or str(association_id).strip() == "":
         raise Exception("association_id cannot be empty")
 

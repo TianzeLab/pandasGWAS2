@@ -47,7 +47,58 @@ _NESTED_FIELDS = [
 
 
 class Study:
+    """
+       An object that stores data of type Study. To understand the significance of each column of the DataFrame. Please visit "Study" in [Gwas Catalog Documentation](https://www.ebi.ac.uk/gwas/rest/api/v2/docs/reference) for details.
 
+       Attributes:
+            raw_data: list. Converted from obtained JSON data.
+            studies: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            efo_traits: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            genotyping_technologies: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            discovery_ancestries: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            replication_ancestries: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            bg_efo_traits: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            cohorts: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            array_manufacturers: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            mode: Fat or Thin. Specifies the mode of the returned object.
+
+       ```python
+       from pandasgwas.get_studies import get_studies
+
+       ch = get_studies(accession_id='GCST000854')
+       ch
+       ch.raw_data
+       ch.mode
+       ch.studies
+       ch.efo_traits
+       ch.genotyping_technologies
+       ch.discovery_ancestries
+       ch.replication_ancestries
+       ch.bg_efo_traits
+       ch.cohorts
+       ch.array_manufacturers
+       ```
+       Subset object s by either identifier or position
+       ```python
+       all_df = get_studies()
+       all_df[0].studies
+       all_df[0:3].studies
+       all_df['GCST000854'].studies
+       all_df[('GCST000854','GCST90841394','GCST90256308')].studies
+       ```
+       Objects can be manipulated like sets in the mathematical sense.
+       ```python
+       one = get_studies(accession_id='GCST000854')
+       two = get_studies(accession_id='GCST90841394')
+       three = get_studies(accession_id='GCST90256308')
+       one_and_two = one+two
+       two_and_three = two+three
+       only_one = one_and_two - two_and_three
+       only_two = one_and_two & two_and_three
+       one_and_two_and_three = one_and_two | two_and_three
+       one_and_three = one_and_two ^ two_and_three
+       ```
+       """
     def __init__(self, data: list = None, mode: str = "Fat"):
         if mode not in ['Thin', 'Fat']:
             raise Exception("Mode must be Fat or Thin")
@@ -405,5 +456,3 @@ class Study:
 
     def __len__(self):
         return len(self.raw_data)
-
-

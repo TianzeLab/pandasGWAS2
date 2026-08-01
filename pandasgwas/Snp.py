@@ -29,7 +29,48 @@ _NESTED_FIELDS = [
 
 
 class Snp:
+    """
+       An object that stores data of type Snp. To understand the significance of each column of the DataFrame. Please visit "Snp" in [Gwas Catalog Documentation](https://www.ebi.ac.uk/gwas/rest/api/v2/docs/reference) for details.
 
+       Attributes:
+            raw_data: list. Converted from obtained JSON data.
+            snps: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            locations: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            mapped_genes: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            mode: Fat or Thin. Specifies the mode of the returned object.
+
+       ```python
+       from pandasgwas.get_snps import get_snps
+
+       ch = get_snps(rs_id='rs3093017')
+       ch
+       ch.raw_data
+       ch.mode
+       ch.snps
+       ch.locations
+       ch.mapped_genes
+       ```
+       Subset object s by either identifier or position
+       ```python
+       all_df = get_snps()
+       all_df[0].snps
+       all_df[0:3].snps
+       all_df['rs3093017'].snps
+       all_df[('rs3093017','rs7671745','rs61953412')].snps
+       ```
+       Objects can be manipulated like sets in the mathematical sense.
+       ```python
+       one = get_snps(rs_id='rs3093017')
+       two = get_snps(rs_id='rs7671745')
+       three = get_snps(rs_id='rs61953412')
+       one_and_two = one+two
+       two_and_three = two+three
+       only_one = one_and_two - two_and_three
+       only_two = one_and_two & two_and_three
+       one_and_two_and_three = one_and_two | two_and_three
+       one_and_three = one_and_two ^ two_and_three
+       ```
+       """
     def __init__(self, data: list = None, mode: str = "Fat"):
         if mode not in ['Thin', 'Fat']:
             raise Exception("Mode must be Fat or Thin")

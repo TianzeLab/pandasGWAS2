@@ -15,7 +15,44 @@ _TRAIT_COLUMNS = [
 
 
 class Trait:
+    """
+       An object that stores data of type Trait. To understand the significance of each column of the DataFrame. Please visit "Trait" in [Gwas Catalog Documentation](https://www.ebi.ac.uk/gwas/rest/api/v2/docs/reference) for details.
 
+       Attributes:
+            raw_data: list. Converted from obtained JSON data.
+            traits: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            mode: Fat or Thin. Specifies the mode of the returned object.
+
+       ```python
+       from pandasgwas.get_traits import get_traits
+
+       ch = get_traits(efo_id='EFO_0009713')
+       ch
+       ch.raw_data
+       ch.mode
+       ch.traits
+       ```
+       Subset object s by either identifier or position
+       ```python
+       all_df = get_traits()
+       all_df[0].traits
+       all_df[0:3].traits
+       all_df['EFO_0009713'].traits
+       all_df[('EFO_0009713','OBA_VT0001321','EFO_0920093')].traits
+       ```
+       Objects can be manipulated like sets in the mathematical sense.
+       ```python
+       one = get_traits(efo_id='EFO_0009713')
+       two = get_traits(efo_id='OBA_VT0001321')
+       three = get_traits(efo_id='EFO_0920093')
+       one_and_two = one+two
+       two_and_three = two+three
+       only_one = one_and_two - two_and_three
+       only_two = one_and_two & two_and_three
+       one_and_two_and_three = one_and_two | two_and_three
+       one_and_three = one_and_two ^ two_and_three
+       ```
+       """
     def __init__(self, data: list = None, mode: str = "Fat"):
         if mode not in ['Thin', 'Fat']:
             raise Exception("Mode must be Fat or Thin")

@@ -19,6 +19,31 @@ def get_snps(
     cached: bool = True,
     mode: str = 'Fat'
 ) -> Snp:
+    """
+    Get Snp data from the server.
+
+    Args:
+        rs_id: SNP rsId; if a haplotype it may include more than one rs number (multiple SNPs comprising the haplotype).
+        bp_location: search for SNPs via their base pair location.
+        bp_start: Search for SNPs on a certain chromosome and within a given base pair location range.
+        bp_end: Search for SNPs on a certain chromosome and within a given base pair location range.
+        pubmed_id: pubmedId of the publication.
+        chromosome: Search for SNPs on a certain chromosome.
+        mapped_gene: Gene(s) overlapping the variant. If a variant is intergenic, the closest 5' and 3' genes are listed.
+        extended_geneset: Show extended matching genes in addition to the mapped genes.
+        cached: Whether or not to try to get data from the cache.
+        mode: Fat or Thin. Specifies the mode of the returned object.
+
+
+    Returns:
+        A Snp object. Attributes of type DataFrame have hierarchical dependencies.
+
+    ```Python
+    from pandasGWAS2.get_snps import get_snps
+
+    ch = get_snps(rs_id='rs3093017')
+    ```
+    """
     params = {
         "rs_id": rs_id,
         "bp_location": bp_location,

@@ -26,7 +26,50 @@ _NESTED_FIELDS = [
 
 
 class Ancestry:
+    """
+       An object that stores data of type Ancestry. To understand the significance of each column of the DataFrame. Please visit "Ancestry" in [Gwas Catalog Documentation](https://www.ebi.ac.uk/gwas/rest/api/v2/docs/reference) for details.
 
+       Attributes:
+            raw_data: list. Converted from obtained JSON data.
+            ancestries: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            ancestral_groups: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            country_of_origins: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            country_of_recruitments: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            mode: Fat or Thin. Specifies the mode of the returned object.
+
+       ```python
+       from pandasgwas.get_ancestries import get_ancestries
+
+       ch = get_ancestries(accession_id='GCST000854')
+       ch
+       ch.raw_data
+       ch.mode
+       ch.ancestries
+       ch.ancestral_groups
+       ch.country_of_origins
+       ch.country_of_recruitments
+       ```
+       Subset object s by either identifier or position
+       ```python
+       all_df = get_ancestries(accession_id='GCST000854')
+       all_df[0].ancestries
+       all_df[0:3].ancestries
+       all_df['GCST000854|4595'].ancestries
+       all_df[('GCST000854|4595','GCST000854|7528','GCST000854|7529')].ancestries
+       ```
+       Objects can be manipulated like sets in the mathematical sense.
+       ```python
+       one = get_ancestries(accession_id='GCST000854', ancestry_id='4595')
+       two = get_ancestries(accession_id='GCST000854', ancestry_id='7528')
+       three = get_ancestries(accession_id='GCST000854', ancestry_id='7529')
+       one_and_two = one+two
+       two_and_three = two+three
+       only_one = one_and_two - two_and_three
+       only_two = one_and_two & two_and_three
+       one_and_two_and_three = one_and_two | two_and_three
+       one_and_three = one_and_two ^ two_and_three
+       ```
+       """
     def __init__(self, data: list = None, mode: str = "Fat"):
         if mode not in ['Thin', 'Fat']:
             raise Exception("Mode must be Fat or Thin")

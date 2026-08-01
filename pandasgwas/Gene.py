@@ -25,7 +25,48 @@ _NESTED_FIELDS = [
 
 
 class Gene:
+    """
+       An object that stores data of type Gene. To understand the significance of each column of the DataFrame. Please visit "Gene" in [Gwas Catalog Documentation](https://www.ebi.ac.uk/gwas/rest/api/v2/docs/reference) for details.
 
+       Attributes:
+            raw_data: list. Converted from obtained JSON data.
+            genes: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            ensembl_gene_ids: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            entrez_gene_ids: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            mode: Fat or Thin. Specifies the mode of the returned object.
+
+       ```python
+       from pandasgwas.get_genes import get_genes
+
+       ch = get_genes(gene_name='HBS1L')
+       ch
+       ch.raw_data
+       ch.mode
+       ch.genes
+       ch.ensembl_gene_ids
+       ch.entrez_gene_ids
+       ```
+       Subset object s by either identifier or position
+       ```python
+       all_df = get_genes()
+       all_df[0].genes
+       all_df[0:3].genes
+       all_df['SAMD5'].genes
+       all_df[('SAMD5','SASH1','PSORS1C2')].genes
+       ```
+       Objects can be manipulated like sets in the mathematical sense.
+       ```python
+       one = get_genes(gene_name='HBS1L')
+       two = get_genes(gene_name='SAMD5')
+       three = get_genes(gene_name='SASH1')
+       one_and_two = one+two
+       two_and_three = two+three
+       only_one = one_and_two - two_and_three
+       only_two = one_and_two & two_and_three
+       one_and_two_and_three = one_and_two | two_and_three
+       one_and_three = one_and_two ^ two_and_three
+       ```
+       """
     def __init__(self, data: list = None, mode: str = "Fat"):
         if mode not in ['Thin', 'Fat']:
             raise Exception("Mode must be Fat or Thin")

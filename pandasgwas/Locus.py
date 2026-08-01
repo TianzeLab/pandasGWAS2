@@ -46,7 +46,52 @@ _NESTED_FIELDS = [
 
 
 class Locus:
+    """
+       An object that stores data of type Locus. To understand the significance of each column of the DataFrame. Please visit "Locus" in [Gwas Catalog Documentation](https://www.ebi.ac.uk/gwas/rest/api/v2/docs/reference) for details.
 
+       Attributes:
+            raw_data: list. Converted from obtained JSON data.
+            loci: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            strongest_risk_alleles: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            author_reported_genes: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            ensembl_gene_ids: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            entrez_gene_ids: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            mode: Fat or Thin. Specifies the mode of the returned object.
+
+       ```python
+       from pandasgwas.get_loci import get_loci
+
+       ch = get_loci(association_id='169106883')
+       ch
+       ch.raw_data
+       ch.mode
+       ch.loci
+       ch.strongest_risk_alleles
+       ch.author_reported_genes
+       ch.ensembl_gene_ids
+       ch.entrez_gene_ids
+       ```
+       Subset object s by either identifier or position
+       ```python
+       all_df = get_loci(association_id='169106883')
+       all_df[0].loci
+       all_df[0:1].loci
+       all_df['169106883|169106882'].loci
+       all_df[('169106883|169106882')].loci
+       ```
+       Objects can be manipulated like sets in the mathematical sense.
+       ```python
+       one = get_loci(association_id='169106883', locus_id='169106882')
+       two = get_loci(association_id='218958492', locus_id='218958491')
+       three = get_loci(association_id='218958441', locus_id='218958440')
+       one_and_two = one+two
+       two_and_three = two+three
+       only_one = one_and_two - two_and_three
+       only_two = one_and_two & two_and_three
+       one_and_two_and_three = one_and_two | two_and_three
+       one_and_three = one_and_two ^ two_and_three
+       ```
+       """
     def _normalize_record(self, record):
         normalized = deepcopy(record)
         aliases = [

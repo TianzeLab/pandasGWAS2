@@ -38,7 +38,46 @@ _NESTED_FIELDS = [
 
 
 class Publication:
+    """
+       An object that stores data of type Publication. To understand the significance of each column of the DataFrame. Please visit "Publication" in [Gwas Catalog Documentation](https://www.ebi.ac.uk/gwas/rest/api/v2/docs/reference) for details.
 
+       Attributes:
+            raw_data: list. Converted from obtained JSON data.
+            publications: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            authors: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            mode: Fat or Thin. Specifies the mode of the returned object.
+
+       ```python
+       from pandasgwas.get_publications import get_publications
+
+       ch = get_publications(pubmed_id='35241825')
+       ch
+       ch.raw_data
+       ch.mode
+       ch.publications
+       ch.authors
+       ```
+       Subset object s by either identifier or position
+       ```python
+       all_df = get_publications()
+       all_df[0].publications
+       all_df[0:3].publications
+       all_df['35241825'].publications
+       all_df[('35241825','42127933','42107849')].publications
+       ```
+       Objects can be manipulated like sets in the mathematical sense.
+       ```python
+       one = get_publications(pubmed_id='35241825')
+       two = get_publications(pubmed_id='42127933')
+       three = get_publications(pubmed_id='42107849')
+       one_and_two = one+two
+       two_and_three = two+three
+       only_one = one_and_two - two_and_three
+       only_two = one_and_two & two_and_three
+       one_and_two_and_three = one_and_two | two_and_three
+       one_and_three = one_and_two ^ two_and_three
+       ```
+       """
     def __init__(self, data: list = None, mode: str = "Fat"):
         if mode not in ['Thin', 'Fat']:
             raise Exception("Mode must be Fat or Thin")

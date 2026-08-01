@@ -14,6 +14,26 @@ def get_publications(
     cached: bool = True,
     mode: str = 'Fat'
 ) -> Publication:
+    """
+    Get Publication data from the server.
+
+    Args:
+        pubmed_id: pubmedId of the publication.
+        title: Title of manuscript the GWAS is included in.
+        first_author: Last name and initials of first author.
+        cached: Whether or not to try to get data from the cache.
+        mode: Fat or Thin. Specifies the mode of the returned object.
+
+
+    Returns:
+        A Publication object. Attributes of type DataFrame have hierarchical dependencies.
+
+    ```Python
+    from pandasGWAS2.get_publications import get_publications
+
+    ch = get_publications(pubmed_id='35241825')
+    ```
+    """
     params = {
         "pubmed_id": pubmed_id,
         "title": title,

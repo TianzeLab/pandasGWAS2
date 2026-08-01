@@ -17,6 +17,29 @@ def get_traits(
     cached: bool = True,
     mode: str = 'Fat'
 ) -> Trait:
+    """
+    Get Trait data from the server.
+
+    Args:
+        efo_trait: The trait name or label.
+        uri: The trait URI or unique identifier.
+        efo_id: The trait URI shortform.
+        pubmed_id: pubmedId of the publication.
+        mapped_gene: Gene(s) overlapping the variant. If a variant is intergenic, the closest 5' and 3' genes are listed.
+        extended_geneset: Show extended matching genes in addition to the mapped genes.
+        cached: Whether or not to try to get data from the cache.
+        mode: Fat or Thin. Specifies the mode of the returned object.
+
+
+    Returns:
+        A Trait object. Attributes of type DataFrame have hierarchical dependencies.
+
+    ```Python
+    from pandasGWAS2.get_traits import get_traits
+
+    ch = get_traits(efo_id='EFO_0001360')
+    ```
+    """
     params = {
         "efo_trait": efo_trait,
         "uri": uri,

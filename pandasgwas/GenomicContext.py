@@ -41,7 +41,52 @@ _NESTED_FIELDS = [
 
 
 class GenomicContext:
+    """
+       An object that stores data of type GenomicContext. To understand the significance of each column of the DataFrame. Please visit "GenomicContext" in [Gwas Catalog Documentation](https://www.ebi.ac.uk/gwas/rest/api/v2/docs/reference) for details.
 
+       Attributes:
+            raw_data: list. Converted from obtained JSON data.
+            genomic_contexts: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            genes: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            locations: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            ensembl_gene_ids: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            entrez_gene_ids: DataFrame. It only exists if the parameter mode of constructor is Fat.
+            mode: Fat or Thin. Specifies the mode of the returned object.
+
+       ```python
+       from pandasgwas.get_genomic_contexts import get_genomic_contexts
+
+       ch = get_genomic_contexts(rs_id='rs3093017')
+       ch
+       ch.raw_data
+       ch.mode
+       ch.genomic_contexts
+       ch.genes
+       ch.locations
+       ch.ensembl_gene_ids
+       ch.entrez_gene_ids
+       ```
+       Subset object s by either identifier or position
+       ```python
+       all_df = get_genomic_contexts(rs_id='rs3093017')
+       all_df[0].genomic_contexts
+       all_df[0:3].genomic_contexts
+       all_df['rs3093017|206217817'].genomic_contexts
+       all_df[('rs3093017|206217817','rs3093017|206217818','rs3093017|206217811')].genomic_contexts
+       ```
+       Objects can be manipulated like sets in the mathematical sense.
+       ```python
+       one = get_genomic_contexts(rs_id='rs3093017', genomicContext_id='206217817')
+       two = get_genomic_contexts(rs_id='rs3093017', genomicContext_id='206217818')
+       three = get_genomic_contexts(rs_id='rs3093017', genomicContext_id='206217811')
+       one_and_two = one+two
+       two_and_three = two+three
+       only_one = one_and_two - two_and_three
+       only_two = one_and_two & two_and_three
+       one_and_two_and_three = one_and_two | two_and_three
+       one_and_three = one_and_two ^ two_and_three
+       ```
+       """
     def _normalize_record(self, record):
         normalized = deepcopy(record)
         aliases = [

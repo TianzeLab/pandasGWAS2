@@ -21,6 +21,33 @@ def get_associations(
     cached: bool = True,
     mode: str = 'Fat'
 ) -> Association:
+    """
+    Get Association data from the server.
+
+    Args:
+        association_id: Primary identifier of association table.
+        pubmed_id: pubmedId of the publication.
+        rs_id: SNP rsID; if a haplotype it may include more than one rs number (multiple SNPs comprising the haplotype).
+        full_pvalue_set: Whether full summary statistics are available for this study.
+        accession_id: The study's GWAS Catalog accession ID.
+        efo_trait: The trait name or label.
+        efo_id: The trait URI shortform.
+        show_child_trait: display entities for descendants of a parent Efo Trait Term.
+        mapped_gene: Gene(s) overlapping the variant. If a variant is intergenic, the closest 5' and 3' genes are listed.
+        extended_geneset: Show extended matching genes in addition to the mapped genes.
+        cached: Whether or not to try to get data from the cache.
+        mode: Fat or Thin. Specifies the mode of the returned object.
+
+
+    Returns:
+        An Association object. Attributes of type DataFrame have hierarchical dependencies.
+
+    ```Python
+    from pandasGWAS2.get_associations import get_associations
+
+    ch = get_associations(association_id='169106883')
+    ```
+    """
     params = {
         "pubmed_id": pubmed_id,
         "rs_id": rs_id,
