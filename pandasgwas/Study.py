@@ -23,6 +23,7 @@ _STUDY_COLUMNS = [
     'platforms',
     'disease_trait',
     'terms_of_license',
+    'full_summary_stats',
     'full_summary_stats_available'
 ]
 
