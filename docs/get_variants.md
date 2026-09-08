@@ -1,1 +1,0 @@
-::: pandasgwas.get_variants
