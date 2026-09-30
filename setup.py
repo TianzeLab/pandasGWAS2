@@ -5,15 +5,15 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="pandasgwas",
-    version="1.2.2",
+    version="2.0.0",
     author="Cao Tianze",
     author_email="hnrcao@qq.com",
     description="A Python package for easy retrieval of GWAS Catalog data",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/caotianze/pandasgwas",
+    url="https://github.com/TianzeLab/pandasGWAS2",
     project_urls={
-        "Bug Tracker": "https://github.com/caotianze/pandasgwas/issues",
+        "Bug Tracker": "https://github.com/TianzeLab/pandasGWAS2/issues",
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
@@ -25,7 +25,7 @@ setuptools.setup(
     # package_dir={"": "pandasgwas"},
     packages=['pandasgwas'],
     python_requires=">=3.12",
-    install_requires=['pandas>=2.3.3', 'requests>=2.32.5', 'progressbar2>=4.5.0', 'cachetools>=7.0.5'],
+    install_requires=['pandas>=3.0.3', 'requests>=2.34.2', 'progressbar2>=4.5.0', 'cachetools>=7.1.4'],
     license="MIT",
     keywords=['gwas', 'genomics', 'snp', 'bioinformatics','pandas'],
     package_data={
