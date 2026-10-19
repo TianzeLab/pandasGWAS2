@@ -15,7 +15,7 @@ trait_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
 snp_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
 ancestry_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
 publication_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
-genomicContext_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
+genomiccontext_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
 gene_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
 locus_cache = TTLCache(maxsize=2 * 1024, ttl=60 * 60 * 24)
 
@@ -45,7 +45,7 @@ def get_publication(url: str, cached=True) -> List[Dict]:
 
 
 def get_genomicContext(url: str, cached=True) -> List[Dict]:
-    return get_data(url, cache_impl=genomicContext_cache, cached=cached, type='genomic_contexts')
+    return get_data(url, cache_impl=genomiccontext_cache, cached=cached, type='genomic_contexts')
 
 
 def get_gene(url: str, cached=True) -> List[Dict]:
@@ -85,7 +85,7 @@ def reinit_cache(field: str = 'All', maxsize: int = 2 * 1024, ttl: int = 60 * 60
     global snp_cache
     global ancestry_cache
     global publication_cache
-    global genomicContext_cache
+    global genomiccontext_cache
     global gene_cache
     global locus_cache
     if field not in fields_and_all:
@@ -103,7 +103,7 @@ def reinit_cache(field: str = 'All', maxsize: int = 2 * 1024, ttl: int = 60 * 60
     elif field == "Publication":
         publication_cache = TTLCache(maxsize=maxsize, ttl=ttl)
     elif field == "GenomicContext":
-        genomicContext_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+        genomiccontext_cache = TTLCache(maxsize=maxsize, ttl=ttl)
     elif field == "Gene":
         gene_cache = TTLCache(maxsize=maxsize, ttl=ttl)
     elif field == "Locus":
@@ -115,7 +115,7 @@ def reinit_cache(field: str = 'All', maxsize: int = 2 * 1024, ttl: int = 60 * 60
         snp_cache = TTLCache(maxsize=maxsize, ttl=ttl)
         ancestry_cache = TTLCache(maxsize=maxsize, ttl=ttl)
         publication_cache = TTLCache(maxsize=maxsize, ttl=ttl)
-        genomicContext_cache = TTLCache(maxsize=maxsize, ttl=ttl)
+        genomiccontext_cache = TTLCache(maxsize=maxsize, ttl=ttl)
         gene_cache = TTLCache(maxsize=maxsize, ttl=ttl)
         locus_cache = TTLCache(maxsize=maxsize, ttl=ttl)
 
