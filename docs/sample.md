@@ -219,19 +219,26 @@ This script identifies genetic variants common to both "type 2 diabetes" and "ob
 trait_1 = "type 2 diabetes mellitus"
 trait_2 = "obesity"
 
-def variants_for_trait(trait):
-    """Return the set of rsIDs associated with a trait."""
-    assocs = get_associations(efo_trait=trait)
-    rs_ids = assocs.snp_effect_alleles['snp_effect_allele'].str.split('-').str[0]
-    return set(rs_ids[rs_ids.str.startswith('rs')].dropna())
-
-# --- Fetch the set of variants for each trait ---
+# --- Fetch and collect variants for trait_1 ---
 print(f"--- Starting search for '{trait_1}' ---")
-variants_for_trait_1 = variants_for_trait(trait_1)
+assocs_1 = get_associations(efo_trait=trait_1)
+variants_for_trait_1 = set(
+    assocs_1.snp_effect_alleles['snp_effect_allele']
+    .str.split('-').str[0]
+    .pipe(lambda s: s[s.str.startswith('rs', na=False)])
+    .dropna()
+)
 print(f"--- Finished fetching for '{trait_1}'. Found {len(variants_for_trait_1)} total unique variants. ---\n")
 
+# --- Fetch and collect variants for trait_2 ---
 print(f"--- Starting search for '{trait_2}' ---")
-variants_for_trait_2 = variants_for_trait(trait_2)
+assocs_2 = get_associations(efo_trait=trait_2)
+variants_for_trait_2 = set(
+    assocs_2.snp_effect_alleles['snp_effect_allele']
+    .str.split('-').str[0]
+    .pipe(lambda s: s[s.str.startswith('rs', na=False)])
+    .dropna()
+)
 print(f"--- Finished fetching for '{trait_2}'. Found {len(variants_for_trait_2)} total unique variants. ---\n")
 
 # Find the intersection of the two sets
