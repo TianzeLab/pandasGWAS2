@@ -50,7 +50,7 @@ display_df[['variant_rsID', 'risk_allele_base']] = display_df['snp_effect_allele
 display_df['mapped_genes'] = display_df['mapped_genes'].fillna('')
 
 # Select and display the most relevant columns for clarity
-display(display_df[[
+print(display_df[[
     'variant_rsID',
     'risk_allele_base',
     'p_value',
@@ -81,7 +81,7 @@ studies_df['cohort'] = studies_df['cohort'].apply(
 )
 
 # Display the DataFrame with selected, useful columns
-display(studies_df[[
+print(studies_df[[
     'accession_id',
     'pubmed_id',
     'disease_trait',
@@ -115,7 +115,7 @@ top_df = (
     .head(10)
 )
 
-display(top_df[[
+print(top_df[[
     'p_value',
     'efo_trait',
     'risk_frequency',
@@ -197,7 +197,7 @@ print(f"--- Search Complete ---")
 if not top.empty:
     top[['variant_rsID', 'risk_allele_base']] = top['snp_effect_allele'].str.split('-', n=1, expand=True)
     print(f"Found the top {len(top)} matching associations.")
-    display(top[[
+    print(top[[
         'p_value',
         'variant_rsID',
         'risk_allele_base',
@@ -248,7 +248,7 @@ common_variants = variants_for_trait_1.intersection(variants_for_trait_2)
 print("\n--- Search Complete ---")
 if common_variants:
     print(f"Found {len(common_variants)} variants common to both '{trait_1}' and '{trait_2}':")
-    display(sorted(common_variants))
+    print(sorted(common_variants))
 else:
     print(f"No common variants found between '{trait_1}' and '{trait_2}'.")
 ```
@@ -281,7 +281,7 @@ if all_gene_mentions:
 
     print(f"Found {len(gene_counts)} unique genes in total.")
     print(f"The top {results_to_find} most frequently reported genes for '{trait_of_interest}' are:")
-    display(gene_counts.head(results_to_find))
+    print(gene_counts.head(results_to_find))
 else:
     print(f"Could not find any gene associations for '{trait_of_interest}'.")
 ```
@@ -326,7 +326,7 @@ studies = get_studies(efo_trait=trait_of_interest, full_pvalue_set=True)
 print(f"\n--- Search Complete ---")
 if len(studies):
     print(f"Found a total of {len(studies)} studies for '{trait_of_interest}' with full summary statistics.")
-    display(studies.studies[[
+    print(studies.studies[[
         'accession_id',
         'pubmed_id',
         'initial_sample_size',
@@ -369,7 +369,7 @@ results_df = pd.DataFrame(display_data)
 results_df_exploded = results_df.explode('associated_traits').reset_index(drop=True)
 
 if not results_df_exploded.empty:
-    display(results_df_exploded)
+    print(results_df_exploded)
 else:
     print("Could not find any trait associations for the variants checked.")
 ```
@@ -419,7 +419,7 @@ print(f"\n===== Step 3: Results =====")
 if gxe_associations:
     results_df = pd.DataFrame(gxe_associations)
     print(f"Found {len(results_df)} associations matching the GxE criteria.")
-    display(results_df[[
+    print(results_df[[
         'accession_id',
         'pubmed_id',
         'reported_traits',
@@ -474,7 +474,7 @@ if region_list:
     region_counts = pd.Series(region_list).value_counts()
 
     print(f"The top {top_regions_to_display} genomic regions with the most variants for '{trait_of_interest}' are:")
-    display(region_counts.head(top_regions_to_display))
+    print(region_counts.head(top_regions_to_display))
 else:
     print("Could not retrieve region information for the variants.")
 ```
@@ -508,7 +508,7 @@ if not top_association.empty:
     )
 
     pd.options.display.float_format = '{:.2e}'.format
-    display(top_association[[
+    print(top_association[[
         'or_value',
         'p_value',
         'variant_rsID',
@@ -589,7 +589,7 @@ print(f"\n--- Search Complete ---")
 if not results_df.empty:
     pd.options.display.float_format = '{:.2e}'.format
 
-    display(results_df[[
+    print(results_df[[
         'p_value',
         'variant_rsID',
         'initial_sample_size',  # Display the sample size
