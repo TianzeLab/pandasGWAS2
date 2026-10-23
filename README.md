@@ -204,7 +204,3 @@ The NHGRI-EBI GWAS Catalog and all its contents are available under the general 
 
 - R package [pandasGWASr](https://github.com/TianzeLab/pandasGWASr)
 - R package [gwasrapidd](https://github.com/ramiromagno/gwasrapidd) by Ramiro Magno
-
-## Cite this work
-
-Cao, T., Li, A. & Huang, Y. pandasGWAS: a Python package for easy retrieval of GWAS catalog data. BMC Genomics 24, 238 (2023). https://doi.org/10.1186/s12864-023-09340-2
